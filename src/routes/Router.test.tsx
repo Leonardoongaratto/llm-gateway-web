@@ -50,7 +50,7 @@ describe('AppRouter (AC-2A-09 / F-06)', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Custo Total (30d)')).toBeInTheDocument();
+      expect(screen.getByText('Gasto no período')).toBeInTheDocument();
       expect(screen.getAllByText('$1.00').length).toBeGreaterThanOrEqual(1);
       expect(document.title).toBe('Visão Geral · LLM Gateway');
     });
@@ -119,7 +119,7 @@ describe('AppRouter (AC-2A-09 / F-06)', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Custo Total (30d)')).toBeInTheDocument();
+      expect(screen.getByText('Gasto no período')).toBeInTheDocument();
       expect(document.title).toBe('Visão Geral · LLM Gateway');
     });
   });
@@ -132,7 +132,7 @@ describe('AppRouter (AC-2A-09 / F-06)', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Custo Total (30d)')).toBeInTheDocument();
+      expect(screen.getByText('Gasto no período')).toBeInTheDocument();
     });
   });
 });

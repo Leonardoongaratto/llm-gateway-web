@@ -52,4 +52,18 @@ describe('Design Tokens Apple HIG (AC-2A-02, AC-2A-03, AC-25)', () => {
     expect(cssContent).toContain('.skeleton-shimmer');
     expect(cssContent).toContain('@media (prefers-reduced-motion: reduce)');
   });
+
+  it('defines provider color tokens for charts and badges (AC-2B-01)', () => {
+    expect(cssContent).toContain('--hig-provider-anthropic: #d97706');
+    expect(cssContent).toContain('--hig-provider-openai: #06b6d4');
+    expect(cssContent).toContain('--hig-provider-gemini: #6366f1');
+    expect(cssContent).toContain('--hig-provider-anthropic: #f59e0b');
+    expect(cssContent).toContain('--hig-provider-openai: #22d3ee');
+    expect(cssContent).toContain('--hig-provider-gemini: #818cf8');
+  });
+
+  it('defines screen-reader only utility (.sr-only) for chart accessibility (AC-23)', () => {
+    expect(cssContent).toContain('.sr-only');
+    expect(cssContent).toContain('clip: rect(0, 0, 0, 0)');
+  });
 });

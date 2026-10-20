@@ -56,10 +56,14 @@ describe('Formatadores Contábeis e Monetários HIG (AC-2A-06 / F-04)', () => {
       expect(result.formatted).toBe('0.0%');
     });
 
-    it('handles previous zero gracefully without dividing by zero', () => {
-      const result = formatPercentChange(50, 0);
-      expect(result.trend).toBe('up');
-      expect(result.formatted).toBe('+100.0%');
+    it('handles previous zero gracefully with positive and negative current', () => {
+      const posResult = formatPercentChange(50, 0);
+      expect(posResult.trend).toBe('up');
+      expect(posResult.formatted).toBe('+100.0%');
+
+      const negResult = formatPercentChange(-50, 0);
+      expect(negResult.trend).toBe('down');
+      expect(negResult.formatted).toBe('-100.0%');
     });
   });
 
@@ -74,6 +78,8 @@ describe('Formatadores Contábeis e Monetários HIG (AC-2A-06 / F-04)', () => {
       expect(formatDateShort('')).toBe('');
       expect(formatDateShort('invalid-date')).toBe('invalid-date');
       expect(formatDateShort('2026-99-99')).toBe('2026-99-99');
+      expect(formatDateShort('2026-00-10')).toBe('2026-00-10');
+      expect(formatDateShort('2026-05-abc')).toBe('2026-05-abc');
     });
   });
 

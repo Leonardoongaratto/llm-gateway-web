@@ -1,8 +1,3 @@
-/**
- * Formatadores Contábeis e Monetários determinísticos
- * Padrão Apple HIG com suporte a números tabulares
- */
-
 const MONTH_NAMES_SHORT = [
   'jan',
   'fev',
@@ -18,10 +13,6 @@ const MONTH_NAMES_SHORT = [
   'dez',
 ];
 
-/**
- * Converte um valor em micros (1 USD = 1.000.000 micros) para uma string formatada em US$.
- * Se o valor for menor que US$ 0.01 e diferente de zero, exibe 4 casas decimais para preservar precisão.
- */
 export function microsToUsd(
   micros: number | bigint,
   options?: { minimumFractionDigits?: number; maximumFractionDigits?: number },
@@ -59,15 +50,15 @@ export interface PercentChange {
   trend: 'up' | 'down' | 'neutral';
 }
 
-/**
- * Calcula a variação percentual entre o valor atual e o anterior com sinal explícito.
- */
 export function formatPercentChange(current: number, previous: number): PercentChange {
   if (previous === 0) {
     if (current === 0) {
       return { value: 0, formatted: '0.0%', trend: 'neutral' };
     }
-    return { value: 100, formatted: '+100.0%', trend: 'up' };
+    if (current > 0) {
+      return { value: 100, formatted: '+100.0%', trend: 'up' };
+    }
+    return { value: -100, formatted: '-100.0%', trend: 'down' };
   }
 
   const change = ((current - previous) / Math.abs(previous)) * 100;
@@ -84,9 +75,6 @@ export function formatPercentChange(current: number, previous: number): PercentC
   return { value: rounded, formatted: `${rounded.toFixed(1)}%`, trend: 'down' };
 }
 
-/**
- * Converte data ISO YYYY-MM-DD em formato curto legível: "17 out".
- */
 export function formatDateShort(dateStr: string): string {
   if (!dateStr) return '';
   const parts = dateStr.split('-');
@@ -103,9 +91,6 @@ export function formatDateShort(dateStr: string): string {
   return `${day} ${monthName}`;
 }
 
-/**
- * Formata números inteiros com separadores de milhar (ex.: 565080 -> "565.080").
- */
 export function formatNumber(n: number): string {
   return new Intl.NumberFormat('pt-BR').format(n);
 }

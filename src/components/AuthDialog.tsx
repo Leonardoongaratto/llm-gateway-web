@@ -13,13 +13,23 @@ const AuthDialogModal: React.FC<Pick<AuthDialogProps, 'onClose' | 'onSuccess'>> 
 }) => {
   const [tokenInput, setTokenInput] = useState(() => getAdminToken() ?? '');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isValidating, setIsValidating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
-  }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+    const handleKeyDownGlobal = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDownGlobal);
+    return () => window.removeEventListener('keydown', handleKeyDownGlobal);
+  }, [onClose]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = tokenInput.trim();
     if (!trimmed) {
@@ -27,14 +37,27 @@ const AuthDialogModal: React.FC<Pick<AuthDialogProps, 'onClose' | 'onSuccess'>> 
       return;
     }
 
-    setAdminToken(trimmed);
-    onSuccess();
-    onClose();
-  };
+    setIsValidating(true);
+    setErrorMessage('');
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    try {
+      const res = await fetch('/admin/summary?days=7', {
+        headers: { Authorization: `Bearer ${trimmed}` },
+      });
+      if (res.status === 401 || res.status === 403) {
+        setErrorMessage('Chave inválida ou não autorizada pelo servidor.');
+        setIsValidating(false);
+        return;
+      }
+      setAdminToken(trimmed);
+      onSuccess();
       onClose();
+    } catch {
+      setAdminToken(trimmed);
+      onSuccess();
+      onClose();
+    } finally {
+      setIsValidating(false);
     }
   };
 
@@ -43,7 +66,7 @@ const AuthDialogModal: React.FC<Pick<AuthDialogProps, 'onClose' | 'onSuccess'>> 
       role="dialog"
       aria-modal="true"
       aria-labelledby="auth-dialog-title"
-      onKeyDown={handleKeyDown}
+      ref={dialogRef}
       style={{
         position: 'fixed',
         inset: 0,
@@ -101,6 +124,7 @@ const AuthDialogModal: React.FC<Pick<AuthDialogProps, 'onClose' | 'onSuccess'>> 
               type="password"
               placeholder="Ex: lgw_admin_live_..."
               value={tokenInput}
+              disabled={isValidating}
               onChange={(e) => {
                 setTokenInput(e.target.value);
                 if (errorMessage) setErrorMessage('');
@@ -125,6 +149,7 @@ const AuthDialogModal: React.FC<Pick<AuthDialogProps, 'onClose' | 'onSuccess'>> 
             <button
               type="button"
               onClick={onClose}
+              disabled={isValidating}
               style={{
                 padding: '8px 16px',
                 fontSize: '13px',
@@ -140,6 +165,7 @@ const AuthDialogModal: React.FC<Pick<AuthDialogProps, 'onClose' | 'onSuccess'>> 
             </button>
             <button
               type="submit"
+              disabled={isValidating}
               style={{
                 padding: '8px 18px',
                 fontSize: '13px',
@@ -148,10 +174,10 @@ const AuthDialogModal: React.FC<Pick<AuthDialogProps, 'onClose' | 'onSuccess'>> 
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: 'var(--hig-radius-sm)',
-                cursor: 'pointer',
+                cursor: isValidating ? 'wait' : 'pointer',
               }}
             >
-              Salvar
+              {isValidating ? 'Validando...' : 'Salvar'}
             </button>
           </div>
         </form>

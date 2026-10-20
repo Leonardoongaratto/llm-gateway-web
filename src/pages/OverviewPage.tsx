@@ -8,7 +8,7 @@ import { formatDateShort, formatNumber, formatPercentChange, microsToUsd } from 
 import { usePeriod } from '../layout/AppLayout';
 
 export const OverviewPage: React.FC = () => {
-  const { period } = usePeriod();
+  const { period, refreshKey } = usePeriod();
   const [data, setData] = useState<SummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{ message: string; status?: number } | null>(null);
@@ -41,7 +41,7 @@ export const OverviewPage: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [period, retryKey]);
+  }, [period, retryKey, refreshKey]);
 
   const handleRetry = () => {
     setLoading(true);

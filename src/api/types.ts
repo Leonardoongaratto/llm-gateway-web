@@ -1,7 +1,3 @@
-/**
- * Tipos TypeScript sincronizados com o contrato canônico docs/summary.example.json
- */
-
 export interface DailySpend {
   date: string;
   spend_micros: number;
@@ -10,7 +6,7 @@ export interface DailySpend {
 }
 
 export interface ModelSpend {
-  model_id: string;
+  model: string;
   spend_micros: number;
   requests: number;
   tokens: number;
@@ -19,18 +15,16 @@ export interface ModelSpend {
 
 export interface KeySpend {
   key_id: string;
-  name: string;
   spend_micros: number;
   requests: number;
   tokens: number;
-  daily_limit_micros?: number;
 }
 
-export interface ProviderHealth {
+export interface ProviderSpend {
   provider: string;
-  status: 'healthy' | 'degraded' | 'down';
-  latency_ms: number;
   spend_micros: number;
+  requests: number;
+  tokens: number;
 }
 
 export interface SubscriptionSpend {
@@ -38,16 +32,26 @@ export interface SubscriptionSpend {
   name: string;
   provider: string;
   monthly_cost_micros: number;
-  plan: string;
-  status: string;
+  equivalent_value_micros: number;
+  aproveitamento: number;
 }
 
-export interface AuditEvent {
-  id: string;
-  timestamp: string;
-  type: string;
-  details: string;
-  severity?: 'info' | 'warning' | 'error';
+export interface ProviderReconciliation {
+  provider: string;
+  gateway_spend_micros: number;
+  org_spend_micros: number;
+  overlap_micros: number;
+  discrepancy_micros: number;
+  reconciled_spend_micros: number;
+}
+
+export interface ReconciliationReport {
+  by_provider?: Record<string, ProviderReconciliation>;
+  total_gateway_micros?: number;
+  total_org_micros?: number;
+  total_overlap_micros?: number;
+  total_discrepancy_micros?: number;
+  total_reconciled_micros?: number;
 }
 
 export interface SummaryResponse {
@@ -58,11 +62,11 @@ export interface SummaryResponse {
   prev_spend_micros: number;
   projected_month_micros: number;
   daily: DailySpend[];
-  models?: ModelSpend[];
-  keys?: KeySpend[];
-  providers?: ProviderHealth[];
+  by_model?: ModelSpend[];
+  by_key?: KeySpend[];
+  by_provider?: ProviderSpend[];
   subscriptions?: SubscriptionSpend[];
-  events?: AuditEvent[];
+  reconciliation?: ReconciliationReport;
 }
 
 export interface HealthResponse {

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAdminToken } from '../api/auth';
@@ -7,6 +7,7 @@ import { AuthDialog } from './AuthDialog';
 describe('AuthDialog Component (AC-2A-05 / F-03)', () => {
   beforeEach(() => {
     sessionStorage.clear();
+    vi.restoreAllMocks();
   });
 
   it('renders dialog when isOpen is true', () => {
@@ -22,10 +23,12 @@ describe('AuthDialog Component (AC-2A-05 / F-03)', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('saves token in sessionStorage and triggers onSuccess when submitted', async () => {
+  it('saves token in sessionStorage and triggers onSuccess when valid', async () => {
     const user = userEvent.setup();
     const onSuccess = vi.fn();
     const onClose = vi.fn();
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ status: 200, ok: true }));
 
     render(<AuthDialog isOpen={true} onClose={onClose} onSuccess={onSuccess} />);
 
@@ -35,9 +38,34 @@ describe('AuthDialog Component (AC-2A-05 / F-03)', () => {
     const submitBtn = screen.getByRole('button', { name: /salvar/i });
     await user.click(submitBtn);
 
-    expect(getAdminToken()).toBe('lgw_token_xyz_999');
-    expect(onSuccess).toHaveBeenCalledTimes(1);
-    expect(onClose).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(getAdminToken()).toBe('lgw_token_xyz_999');
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('displays error and does not save token when backend returns 401', async () => {
+    const user = userEvent.setup();
+    const onSuccess = vi.fn();
+    const onClose = vi.fn();
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ status: 401, ok: false }));
+
+    render(<AuthDialog isOpen={true} onClose={onClose} onSuccess={onSuccess} />);
+
+    const input = screen.getByPlaceholderText('Ex: lgw_admin_live_...');
+    await user.type(input, 'invalid_token');
+
+    const submitBtn = screen.getByRole('button', { name: /salvar/i });
+    await user.click(submitBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('Chave inválida ou não autorizada pelo servidor.')).toBeInTheDocument();
+      expect(getAdminToken()).toBeNull();
+      expect(onSuccess).not.toHaveBeenCalled();
+      expect(onClose).not.toHaveBeenCalled();
+    });
   });
 
   it('closes dialog when cancel button is clicked', async () => {
@@ -48,6 +76,17 @@ describe('AuthDialog Component (AC-2A-05 / F-03)', () => {
 
     const cancelBtn = screen.getByRole('button', { name: /cancelar/i });
     await user.click(cancelBtn);
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes dialog on Escape key press', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+
+    render(<AuthDialog isOpen={true} onClose={onClose} onSuccess={vi.fn()} />);
+
+    await user.keyboard('{Escape}');
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });

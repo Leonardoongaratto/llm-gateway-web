@@ -40,4 +40,16 @@ describe('Design Tokens Apple HIG (AC-2A-02, AC-2A-03, AC-25)', () => {
     expect(cssContent).toContain('.glass-nav');
     expect(cssContent).toContain('backdrop-filter: var(--hig-nav-backdrop)');
   });
+
+  it('defines responsive navigation breakpoint below 760px for compact tabs (AC-2A-07)', () => {
+    expect(cssContent).toContain('@media (max-width: 759px)');
+    expect(cssContent).toContain('.sidebar-container');
+    expect(cssContent).toContain('.sidebar-nav-list');
+  });
+
+  it('defines skeleton-shimmer animation and respects prefers-reduced-motion', () => {
+    expect(cssContent).toContain('@keyframes shimmer');
+    expect(cssContent).toContain('.skeleton-shimmer');
+    expect(cssContent).toContain('@media (prefers-reduced-motion: reduce)');
+  });
 });

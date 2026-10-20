@@ -27,7 +27,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Falha ao copiar para clipboard
+      return;
     }
   };
 

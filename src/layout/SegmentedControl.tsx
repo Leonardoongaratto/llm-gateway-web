@@ -1,3 +1,5 @@
+import React from 'react';
+
 export interface SegmentOption<T extends string | number> {
   value: T;
   label: string;
@@ -16,6 +18,20 @@ export function SegmentedControl<T extends string | number>({
   onChange,
   ariaLabel = 'Seletor de período',
 }: SegmentedControlProps<T>) {
+  const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const nextIndex = (index + 1) % options.length;
+      const nextOpt = options[nextIndex];
+      if (nextOpt) onChange(nextOpt.value);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prevIndex = (index - 1 + options.length) % options.length;
+      const prevOpt = options[prevIndex];
+      if (prevOpt) onChange(prevOpt.value);
+    }
+  };
+
   return (
     <div
       role="tablist"
@@ -29,7 +45,7 @@ export function SegmentedControl<T extends string | number>({
         border: '1px solid var(--hig-border)',
       }}
     >
-      {options.map((opt) => {
+      {options.map((opt, index) => {
         const isSelected = opt.value === value;
         return (
           <button
@@ -37,7 +53,9 @@ export function SegmentedControl<T extends string | number>({
             type="button"
             role="tab"
             aria-selected={isSelected}
+            tabIndex={isSelected ? 0 : -1}
             onClick={() => onChange(opt.value)}
+            onKeyDown={(e) => handleKeyDown(e, index)}
             style={{
               padding: '4px 12px',
               fontSize: '12px',

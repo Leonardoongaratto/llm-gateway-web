@@ -38,4 +38,20 @@ describe('SegmentedControl Component (AC-2A-08, AC-21 / F-05)', () => {
 
     expect(onChange).toHaveBeenCalledWith(90);
   });
+
+  it('navigates through segments using keyboard arrow keys', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+
+    render(<SegmentedControl value={30} options={options} onChange={onChange} />);
+
+    const activeTab = screen.getByRole('tab', { name: '30 dias' });
+    activeTab.focus();
+
+    await user.keyboard('{ArrowRight}');
+    expect(onChange).toHaveBeenCalledWith(90);
+
+    await user.keyboard('{ArrowLeft}');
+    expect(onChange).toHaveBeenCalledWith(7);
+  });
 });

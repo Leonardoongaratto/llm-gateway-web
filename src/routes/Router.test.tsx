@@ -12,10 +12,9 @@ describe('AppRouter (AC-2A-09 / F-06)', () => {
     prev_spend_micros: 1000000,
     projected_month_micros: 1000000,
     daily: [{ date: '2026-09-17', spend_micros: 1000000, requests: 5, tokens: 200 }],
-    keys: [{ key_id: 'vk_1', name: 'Projeto Demo', spend_micros: 500000, requests: 2, tokens: 100 }],
-    providers: [{ provider: 'anthropic', status: 'healthy', latency_ms: 120, spend_micros: 500000 }],
-    models: [{ model_id: 'claude-3-7-sonnet', spend_micros: 500000, requests: 2, tokens: 100 }],
-    events: [{ id: 'ev_1', timestamp: '2026-10-17', type: 'budget.reserved', details: 'Reserva ok' }],
+    by_key: [{ key_id: 'vk_1', spend_micros: 500000, requests: 2, tokens: 100 }],
+    by_provider: [{ provider: 'anthropic', spend_micros: 500000, requests: 2, tokens: 100 }],
+    by_model: [{ model: 'claude-3-7-sonnet', spend_micros: 500000, requests: 2, tokens: 100 }],
   };
 
   beforeEach(() => {
@@ -43,7 +42,7 @@ describe('AppRouter (AC-2A-09 / F-06)', () => {
     vi.stubGlobal('fetch', mockFetch);
   });
 
-  it('renders overview page on "/dashboard"', async () => {
+  it('renders overview page on "/dashboard" and updates document.title', async () => {
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
         <AppRouter />
@@ -53,10 +52,11 @@ describe('AppRouter (AC-2A-09 / F-06)', () => {
     await waitFor(() => {
       expect(screen.getByText('Custo Total (30d)')).toBeInTheDocument();
       expect(screen.getAllByText('$1.00').length).toBeGreaterThanOrEqual(1);
+      expect(document.title).toBe('Visão Geral · LLM Gateway');
     });
   });
 
-  it('renders projects page on "/dashboard/projetos"', async () => {
+  it('renders projects page on "/dashboard/projetos" and updates document.title', async () => {
     render(
       <MemoryRouter initialEntries={['/dashboard/projetos']}>
         <AppRouter />
@@ -65,11 +65,12 @@ describe('AppRouter (AC-2A-09 / F-06)', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Chaves Virtuais e Orçamentos')).toBeInTheDocument();
-      expect(screen.getByText('Projeto Demo')).toBeInTheDocument();
+      expect(screen.getByText('vk_1')).toBeInTheDocument();
+      expect(document.title).toBe('Projetos e Chaves · LLM Gateway');
     });
   });
 
-  it('renders providers page on "/dashboard/provedores"', async () => {
+  it('renders providers page on "/dashboard/provedores" and updates document.title', async () => {
     render(
       <MemoryRouter initialEntries={['/dashboard/provedores']}>
         <AppRouter />
@@ -77,12 +78,13 @@ describe('AppRouter (AC-2A-09 / F-06)', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Saúde dos Provedores Conectados')).toBeInTheDocument();
+      expect(screen.getByText('Consumo por Provedor Conectado')).toBeInTheDocument();
       expect(screen.getByText('anthropic')).toBeInTheDocument();
+      expect(document.title).toBe('Provedores e Modelos · LLM Gateway');
     });
   });
 
-  it('renders events page on "/dashboard/eventos"', async () => {
+  it('renders events page on "/dashboard/eventos" and updates document.title', async () => {
     render(
       <MemoryRouter initialEntries={['/dashboard/eventos']}>
         <AppRouter />
@@ -90,12 +92,12 @@ describe('AppRouter (AC-2A-09 / F-06)', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Log de Eventos e Auditoria NATS')).toBeInTheDocument();
-      expect(screen.getByText('budget.reserved')).toBeInTheDocument();
+      expect(screen.getByText('Nenhum evento registrado')).toBeInTheDocument();
+      expect(document.title).toBe('Auditoria e Eventos · LLM Gateway');
     });
   });
 
-  it('renders settings page on "/dashboard/ajustes"', async () => {
+  it('renders settings page on "/dashboard/ajustes" and updates document.title', async () => {
     render(
       <MemoryRouter initialEntries={['/dashboard/ajustes']}>
         <AppRouter />
@@ -105,6 +107,7 @@ describe('AppRouter (AC-2A-09 / F-06)', () => {
     await waitFor(() => {
       expect(screen.getByText('Conectividade com o Edge Proxy')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /salvar chave/i })).toBeInTheDocument();
+      expect(document.title).toBe('Ajustes e Configurações · LLM Gateway');
     });
   });
 
@@ -117,6 +120,7 @@ describe('AppRouter (AC-2A-09 / F-06)', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Custo Total (30d)')).toBeInTheDocument();
+      expect(document.title).toBe('Visão Geral · LLM Gateway');
     });
   });
 

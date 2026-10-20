@@ -1,8 +1,3 @@
-/**
- * Gerenciador de Autenticação Administrativa (sessionStorage)
- * Conforme especificações do LLM Gateway (LGW_ADMIN_TOKEN)
- */
-
 export const ADMIN_TOKEN_KEY = 'LGW_ADMIN_TOKEN';
 
 type AuthListener = () => void;
@@ -20,7 +15,7 @@ export function setAdminToken(token: string): void {
   try {
     sessionStorage.setItem(ADMIN_TOKEN_KEY, token.trim());
   } catch {
-    // sessionStorage indisponível
+    return;
   }
 }
 
@@ -28,7 +23,7 @@ export function clearAdminToken(): void {
   try {
     sessionStorage.removeItem(ADMIN_TOKEN_KEY);
   } catch {
-    // sessionStorage indisponível
+    return;
   }
 }
 
@@ -49,7 +44,7 @@ export function triggerAuthRequired(): void {
     try {
       listener();
     } catch {
-      // Ignora erro de listener individual
+      return;
     }
   });
 }

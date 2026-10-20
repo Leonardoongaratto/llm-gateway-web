@@ -16,11 +16,15 @@ const ROUTE_TITLES: Record<string, string> = {
 interface PeriodContextType {
   period: PeriodDays;
   setPeriod: (period: PeriodDays) => void;
+  refreshKey: number;
+  triggerRefresh: () => void;
 }
 
 const PeriodContext = createContext<PeriodContextType>({
   period: 30,
   setPeriod: () => {},
+  refreshKey: 0,
+  triggerRefresh: () => {},
 });
 
 export const usePeriod = () => useContext(PeriodContext);
@@ -38,12 +42,15 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         return parseInt(stored, 10) as PeriodDays;
       }
     } catch {
-      // localStorage indisponível
+      return 30;
     }
     return 30;
   });
 
+  const [refreshKey, setRefreshKey] = useState(0);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  const triggerRefresh = () => setRefreshKey((k) => k + 1);
 
   useEffect(() => {
     const unsubscribe = onAuthRequired(() => {
@@ -57,7 +64,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     try {
       localStorage.setItem('lgw_period_days', String(nextPeriod));
     } catch {
-      // localStorage indisponível
+      return;
     }
   };
 
@@ -67,8 +74,19 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     .find(([routePath]) => currentPath === routePath || currentPath.startsWith(`${routePath}/`));
   const title = matchedRoute ? matchedRoute[1] : 'Visão Geral';
 
+  useEffect(() => {
+    document.title = `${title} · LLM Gateway`;
+  }, [title]);
+
   return (
-    <PeriodContext.Provider value={{ period, setPeriod: handlePeriodChange }}>
+    <PeriodContext.Provider
+      value={{
+        period,
+        setPeriod: handlePeriodChange,
+        refreshKey,
+        triggerRefresh,
+      }}
+    >
       <div className="app-shell">
         <Sidebar activePath={currentPath} />
 
@@ -86,7 +104,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         <AuthDialog
           isOpen={isAuthOpen}
           onClose={() => setIsAuthOpen(false)}
-          onSuccess={() => setIsAuthOpen(false)}
+          onSuccess={() => {
+            setIsAuthOpen(false);
+            triggerRefresh();
+          }}
         />
       </div>
     </PeriodContext.Provider>

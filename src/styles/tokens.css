@@ -436,3 +436,39 @@ body {
     padding: 16px;
   }
 }
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--hig-bg-grouped) 0%,
+    var(--hig-fill-tertiary) 50%,
+    var(--hig-bg-grouped) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .skeleton-shimmer {
+    animation: none !important;
+    background: var(--hig-bg-grouped) !important;
+  }
+}

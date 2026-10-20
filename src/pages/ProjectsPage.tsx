@@ -8,7 +8,7 @@ import { formatNumber, microsToUsd } from '../format/formatters';
 import { usePeriod } from '../layout/AppLayout';
 
 export const ProjectsPage: React.FC = () => {
-  const { period } = usePeriod();
+  const { period, refreshKey } = usePeriod();
   const [keys, setKeys] = useState<KeySpend[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +20,7 @@ export const ProjectsPage: React.FC = () => {
     fetchSummary(period)
       .then((res) => {
         if (active) {
-          setKeys(res.keys || []);
+          setKeys(res.by_key || []);
           setError(null);
         }
       })
@@ -38,7 +38,7 @@ export const ProjectsPage: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [period, retryKey]);
+  }, [period, retryKey, refreshKey]);
 
   const handleRetry = () => {
     setLoading(true);
@@ -81,16 +81,7 @@ export const ProjectsPage: React.FC = () => {
             {keys.map((k) => (
               <tr key={k.key_id} style={{ borderBottom: '1px solid var(--hig-separator)' }}>
                 <td style={{ padding: '10px 12px' }}>
-                  <div style={{ fontWeight: 600 }}>{k.name}</div>
-                  <div
-                    style={{
-                      fontSize: '11px',
-                      color: 'var(--hig-text-tertiary)',
-                      fontFamily: 'var(--hig-font-mono)',
-                    }}
-                  >
-                    {k.key_id}
-                  </div>
+                  <div style={{ fontWeight: 600, fontFamily: 'var(--hig-font-mono)' }}>{k.key_id}</div>
                 </td>
                 <td style={{ padding: '10px 12px' }} className="tabular-nums">
                   {microsToUsd(k.spend_micros)}

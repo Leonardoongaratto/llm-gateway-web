@@ -41,4 +41,15 @@ describe('Sidebar Component (AC-2A-07 / F-05)', () => {
 
     expect(onNavigate).toHaveBeenCalledWith('/dashboard/projetos');
   });
+
+  it('highlights Visão Geral when activePath has trailing slash /dashboard/', () => {
+    render(
+      <MemoryRouter initialEntries={['/dashboard/']}>
+        <Sidebar activePath="/dashboard/" />
+      </MemoryRouter>,
+    );
+
+    const overviewLink = screen.getByRole('link', { name: /visão geral/i });
+    expect(overviewLink).toHaveAttribute('aria-current', 'page');
+  });
 });

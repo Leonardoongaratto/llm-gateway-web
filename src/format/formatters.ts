@@ -80,8 +80,8 @@ export function formatDateShort(dateStr: string): string {
   const parts = dateStr.split('-');
   if (parts.length !== 3) return dateStr;
 
-  const monthIndex = parseInt(parts[1] ?? '0', 10) - 1;
-  const day = parseInt(parts[2] ?? '0', 10);
+  const monthIndex = parseInt(parts[1]!, 10) - 1;
+  const day = parseInt(parts[2]!, 10);
 
   if (monthIndex < 0 || monthIndex >= 12 || isNaN(day)) {
     return dateStr;

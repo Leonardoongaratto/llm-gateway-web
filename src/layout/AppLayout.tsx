@@ -69,9 +69,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   };
 
   const currentPath = location.pathname;
+  const normalizedPath = currentPath.replace(/\/+$/, '') || '/';
   const matchedRoute = Object.entries(ROUTE_TITLES)
     .sort(([a], [b]) => b.length - a.length)
-    .find(([routePath]) => currentPath === routePath || currentPath.startsWith(`${routePath}/`));
+    .find(([routePath]) => normalizedPath === routePath || normalizedPath.startsWith(`${routePath}/`));
   const title = matchedRoute ? matchedRoute[1] : 'Visão Geral';
 
   useEffect(() => {
@@ -88,7 +89,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       }}
     >
       <div className="app-shell">
-        <Sidebar activePath={currentPath} />
+        <Sidebar activePath={normalizedPath} />
 
         <div className="main-content-wrapper">
           <Toolbar

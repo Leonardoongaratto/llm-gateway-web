@@ -135,10 +135,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePath, onNavigate }) => {
 
       <nav className="sidebar-nav-list">
         {NAV_ITEMS.map((item) => {
+          const normalizedActive = activePath.replace(/\/+$/, '') || '/';
           const isActive =
             item.path === '/dashboard'
-              ? activePath === '/dashboard' || activePath === '/'
-              : activePath.startsWith(item.path);
+              ? normalizedActive === '/dashboard' || normalizedActive === '/'
+              : normalizedActive.startsWith(item.path);
 
           return (
             <Link

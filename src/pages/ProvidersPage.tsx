@@ -90,28 +90,9 @@ export const ProvidersPage: React.FC = () => {
                   border: '1px solid var(--hig-border)',
                 }}
               >
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '8px',
-                  }}
-                >
+                <div style={{ marginBottom: '8px' }}>
                   <span style={{ fontWeight: 600, fontSize: '15px', textTransform: 'capitalize' }}>
                     {p.provider}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      padding: '2px 8px',
-                      borderRadius: 'var(--hig-radius-pill)',
-                      backgroundColor: 'var(--hig-success-subtle)',
-                      color: 'var(--hig-success)',
-                    }}
-                  >
-                    Ativo
                   </span>
                 </div>
                 <div

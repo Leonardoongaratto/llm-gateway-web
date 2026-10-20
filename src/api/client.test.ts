@@ -99,4 +99,52 @@ describe('API Client (AC-2A-04, AC-2A-05 / F-03)', () => {
     expect(data.status).toBe('ok');
     expect(fetchMock).toHaveBeenCalledWith('/health', expect.any(Object));
   });
+
+  describe('validateAdminToken', () => {
+    it('returns true when server returns 200 OK', async () => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      const isValid = await import('./client').then((m) => m.validateAdminToken('valid_token'));
+      expect(isValid).toBe(true);
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/admin/summary?days=7',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer valid_token',
+          }),
+        }),
+      );
+    });
+
+    it('returns false when server returns 401 or 403', async () => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      const { validateAdminToken } = await import('./client');
+      expect(await validateAdminToken('unauthorized_token')).toBe(false);
+    });
+
+    it('returns false for empty or whitespace-only token', async () => {
+      const { validateAdminToken } = await import('./client');
+      expect(await validateAdminToken('   ')).toBe(false);
+    });
+
+    it('throws ApiError on server error (500)', async () => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      const { validateAdminToken } = await import('./client');
+      await expect(validateAdminToken('token_500')).rejects.toThrow(ApiError);
+    });
+  });
 });

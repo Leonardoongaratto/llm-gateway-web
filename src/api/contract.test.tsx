@@ -7,13 +7,15 @@ import { OverviewPage } from '../pages/OverviewPage';
 import { ProjectsPage } from '../pages/ProjectsPage';
 import { ProvidersPage } from '../pages/ProvidersPage';
 
+const fixture: SummaryResponse = summaryFixture;
+
 describe('Canonical Contract Verification (BUG-01 / summary.example.json)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
   it('renders OverviewPage successfully with canonical summary fixture', async () => {
-    vi.spyOn(client, 'fetchSummary').mockResolvedValue(summaryFixture as unknown as SummaryResponse);
+    vi.spyOn(client, 'fetchSummary').mockResolvedValue(fixture);
 
     render(<OverviewPage />);
 
@@ -25,7 +27,7 @@ describe('Canonical Contract Verification (BUG-01 / summary.example.json)', () =
   });
 
   it('renders ProjectsPage with by_key items from canonical fixture', async () => {
-    vi.spyOn(client, 'fetchSummary').mockResolvedValue(summaryFixture as unknown as SummaryResponse);
+    vi.spyOn(client, 'fetchSummary').mockResolvedValue(fixture);
 
     render(<ProjectsPage />);
 
@@ -38,7 +40,7 @@ describe('Canonical Contract Verification (BUG-01 / summary.example.json)', () =
   });
 
   it('renders ProvidersPage with by_provider and by_model items from canonical fixture', async () => {
-    vi.spyOn(client, 'fetchSummary').mockResolvedValue(summaryFixture as unknown as SummaryResponse);
+    vi.spyOn(client, 'fetchSummary').mockResolvedValue(fixture);
 
     render(<ProvidersPage />);
 

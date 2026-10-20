@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { clearAdminToken, getAdminToken, setAdminToken } from '../api/auth';
-import { fetchHealth } from '../api/client';
+import { fetchHealth, validateAdminToken } from '../api/client';
 import type { HealthResponse } from '../api/types';
+import { usePeriod } from '../layout/AppLayout';
 
 export const SettingsPage: React.FC = () => {
   const [tokenInput, setTokenInput] = useState(() => getAdminToken() || '');
   const [saveMessage, setSaveMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isValidating, setIsValidating] = useState(false);
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [loadingHealth, setLoadingHealth] = useState(true);
+  const { triggerRefresh } = usePeriod();
 
   useEffect(() => {
     let active = true;
@@ -30,17 +34,37 @@ export const SettingsPage: React.FC = () => {
     };
   }, []);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAdminToken(tokenInput.trim());
-    setSaveMessage('Chave salva na sessão com sucesso.');
-    setTimeout(() => setSaveMessage(''), 3000);
+    const clean = tokenInput.trim();
+    if (!clean) {
+      setErrorMessage('Por favor, informe uma chave válida.');
+      return;
+    }
+    setIsValidating(true);
+    setErrorMessage('');
+    try {
+      const isValid = await validateAdminToken(clean);
+      if (!isValid) {
+        setErrorMessage('Chave inválida ou não autorizada pelo servidor.');
+        return;
+      }
+      setAdminToken(clean);
+      setSaveMessage('Chave salva na sessão com sucesso.');
+      triggerRefresh();
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch {
+      setErrorMessage('Não foi possível validar, servidor indisponível.');
+    } finally {
+      setIsValidating(false);
+    }
   };
 
   const handleClear = () => {
     clearAdminToken();
     setTokenInput('');
     setSaveMessage('Chave removida da sessão.');
+    triggerRefresh();
     setTimeout(() => setSaveMessage(''), 3000);
   };
 
@@ -61,7 +85,11 @@ export const SettingsPage: React.FC = () => {
               type="password"
               placeholder="Ex: lgw_admin_live_..."
               value={tokenInput}
-              onChange={(e) => setTokenInput(e.target.value)}
+              disabled={isValidating}
+              onChange={(e) => {
+                setTokenInput(e.target.value);
+                if (errorMessage) setErrorMessage('');
+              }}
               style={{
                 width: '100%',
                 padding: '10px 12px',
@@ -78,6 +106,7 @@ export const SettingsPage: React.FC = () => {
           <div style={{ display: 'flex', gap: '10px' }}>
             <button
               type="submit"
+              disabled={isValidating}
               style={{
                 padding: '8px 16px',
                 fontSize: '13px',
@@ -86,13 +115,14 @@ export const SettingsPage: React.FC = () => {
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: 'var(--hig-radius-sm)',
-                cursor: 'pointer',
+                cursor: isValidating ? 'wait' : 'pointer',
               }}
             >
-              Salvar Chave
+              {isValidating ? 'Validando...' : 'Salvar Chave'}
             </button>
             <button
               type="button"
+              disabled={isValidating}
               onClick={handleClear}
               style={{
                 padding: '8px 16px',
@@ -112,6 +142,11 @@ export const SettingsPage: React.FC = () => {
           {saveMessage && (
             <p style={{ color: 'var(--hig-success)', fontSize: '12px', marginTop: '10px', fontWeight: 500 }}>
               {saveMessage}
+            </p>
+          )}
+          {errorMessage && (
+            <p style={{ color: 'var(--hig-danger)', fontSize: '12px', marginTop: '10px', fontWeight: 500 }}>
+              {errorMessage}
             </p>
           )}
         </form>

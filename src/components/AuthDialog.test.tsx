@@ -106,4 +106,27 @@ describe('AuthDialog Component (AC-2A-05 / F-03)', () => {
     expect(onSuccess).not.toHaveBeenCalled();
     expect(screen.getByText('Por favor, informe uma chave válida.')).toBeInTheDocument();
   });
+
+  it('displays error and does not save token on network failure (fail-closed)', async () => {
+    const user = userEvent.setup();
+    const onSuccess = vi.fn();
+    const onClose = vi.fn();
+
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network offline')));
+
+    render(<AuthDialog isOpen={true} onClose={onClose} onSuccess={onSuccess} />);
+
+    const input = screen.getByPlaceholderText('Ex: lgw_admin_live_...');
+    await user.type(input, 'test_token');
+
+    const submitBtn = screen.getByRole('button', { name: /salvar/i });
+    await user.click(submitBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('Não foi possível validar, servidor indisponível.')).toBeInTheDocument();
+      expect(getAdminToken()).toBeNull();
+      expect(onSuccess).not.toHaveBeenCalled();
+      expect(onClose).not.toHaveBeenCalled();
+    });
+  });
 });

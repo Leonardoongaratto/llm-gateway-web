@@ -11,9 +11,10 @@ describe('SettingsPage Component', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders settings page, saves token and clears token', async () => {
+  it('renders settings page, saves valid token and clears token', async () => {
     const user = userEvent.setup();
     vi.spyOn(client, 'fetchHealth').mockResolvedValue({ status: 'ok' });
+    vi.spyOn(client, 'validateAdminToken').mockResolvedValue(true);
 
     render(<SettingsPage />);
 
@@ -29,14 +30,54 @@ describe('SettingsPage Component', () => {
     const saveBtn = screen.getByRole('button', { name: /salvar chave/i });
     await user.click(saveBtn);
 
-    expect(auth.getAdminToken()).toBe('new_admin_token_123');
-    expect(screen.getByText('Chave salva na sessão com sucesso.')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(auth.getAdminToken()).toBe('new_admin_token_123');
+      expect(screen.getByText('Chave salva na sessão com sucesso.')).toBeInTheDocument();
+    });
 
     const clearBtn = screen.getByRole('button', { name: /limpar chave/i });
     await user.click(clearBtn);
 
     expect(auth.getAdminToken()).toBeNull();
     expect(screen.getByText('Chave removida da sessão.')).toBeInTheDocument();
+  });
+
+  it('displays error and does not save when token is invalid', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(client, 'fetchHealth').mockResolvedValue({ status: 'ok' });
+    vi.spyOn(client, 'validateAdminToken').mockResolvedValue(false);
+
+    render(<SettingsPage />);
+
+    const input = screen.getByPlaceholderText('Ex: lgw_admin_live_...');
+    await user.type(input, 'bad_token');
+
+    const saveBtn = screen.getByRole('button', { name: /salvar chave/i });
+    await user.click(saveBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('Chave inválida ou não autorizada pelo servidor.')).toBeInTheDocument();
+      expect(auth.getAdminToken()).toBeNull();
+    });
+  });
+
+  it('displays error and does not save on network failure', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(client, 'fetchHealth').mockResolvedValue({ status: 'ok' });
+    vi.spyOn(client, 'validateAdminToken').mockRejectedValue(new Error('Network error'));
+
+    render(<SettingsPage />);
+
+    const input = screen.getByPlaceholderText('Ex: lgw_admin_live_...');
+    await user.type(input, 'offline_token');
+
+    const saveBtn = screen.getByRole('button', { name: /salvar chave/i });
+    await user.click(saveBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('Não foi possível validar, servidor indisponível.')).toBeInTheDocument();
+      expect(auth.getAdminToken()).toBeNull();
+    });
   });
 
   it('shows unavailable status when health check fails', async () => {

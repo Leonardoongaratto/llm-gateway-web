@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getAdminToken, setAdminToken } from '../api/auth';
+import { validateAdminToken } from '../api/client';
 
 interface AuthDialogProps {
   isOpen: boolean;
@@ -16,17 +17,38 @@ const AuthDialogModal: React.FC<Pick<AuthDialogProps, 'onClose' | 'onSuccess'>> 
   const [isValidating, setIsValidating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    previousActiveElement.current = document.activeElement as HTMLElement | null;
     inputRef.current?.focus();
 
     const handleKeyDownGlobal = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
+        return;
+      }
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDownGlobal);
-    return () => window.removeEventListener('keydown', handleKeyDownGlobal);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDownGlobal);
+      previousActiveElement.current?.focus();
+    };
   }, [onClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,21 +63,16 @@ const AuthDialogModal: React.FC<Pick<AuthDialogProps, 'onClose' | 'onSuccess'>> 
     setErrorMessage('');
 
     try {
-      const res = await fetch('/admin/summary?days=7', {
-        headers: { Authorization: `Bearer ${trimmed}` },
-      });
-      if (res.status === 401 || res.status === 403) {
+      const isValid = await validateAdminToken(trimmed);
+      if (!isValid) {
         setErrorMessage('Chave inválida ou não autorizada pelo servidor.');
-        setIsValidating(false);
         return;
       }
       setAdminToken(trimmed);
       onSuccess();
       onClose();
     } catch {
-      setAdminToken(trimmed);
-      onSuccess();
-      onClose();
+      setErrorMessage('Não foi possível validar, servidor indisponível.');
     } finally {
       setIsValidating(false);
     }

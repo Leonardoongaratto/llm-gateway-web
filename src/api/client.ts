@@ -54,3 +54,24 @@ export async function fetchHealth(signal?: AbortSignal): Promise<HealthResponse>
 
   return (await res.json()) as HealthResponse;
 }
+
+export async function validateAdminToken(token: string, signal?: AbortSignal): Promise<boolean> {
+  const clean = token.trim();
+  if (!clean) return false;
+  const res = await fetch('/admin/summary?days=7', {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${clean}`,
+    },
+    signal,
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    return false;
+  }
+  if (!res.ok) {
+    throw new ApiError(res.status, `Falha na validação do token (${res.status})`);
+  }
+  return true;
+}

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as auth from '../api/auth';
 import * as client from '../api/client';
+import * as layout from '../layout/AppLayout';
 import { SettingsPage } from './SettingsPage';
 
 describe('SettingsPage Component', () => {
@@ -11,10 +12,17 @@ describe('SettingsPage Component', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders settings page, saves valid token and clears token', async () => {
+  it('renders settings page, saves valid token and clears token with triggerRefresh', async () => {
     const user = userEvent.setup();
+    const triggerRefreshMock = vi.fn();
     vi.spyOn(client, 'fetchHealth').mockResolvedValue({ status: 'ok' });
     vi.spyOn(client, 'validateAdminToken').mockResolvedValue(true);
+    vi.spyOn(layout, 'usePeriod').mockReturnValue({
+      period: 30,
+      setPeriod: vi.fn(),
+      refreshKey: 0,
+      triggerRefresh: triggerRefreshMock,
+    });
 
     render(<SettingsPage />);
 
@@ -33,6 +41,7 @@ describe('SettingsPage Component', () => {
     await waitFor(() => {
       expect(auth.getAdminToken()).toBe('new_admin_token_123');
       expect(screen.getByText('Chave salva na sessão com sucesso.')).toBeInTheDocument();
+      expect(triggerRefreshMock).toHaveBeenCalledTimes(1);
     });
 
     const clearBtn = screen.getByRole('button', { name: /limpar chave/i });
@@ -40,6 +49,7 @@ describe('SettingsPage Component', () => {
 
     expect(auth.getAdminToken()).toBeNull();
     expect(screen.getByText('Chave removida da sessão.')).toBeInTheDocument();
+    expect(triggerRefreshMock).toHaveBeenCalledTimes(2);
   });
 
   it('displays error and does not save when token is invalid', async () => {

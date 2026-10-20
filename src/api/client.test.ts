@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearAdminToken, setAdminToken } from './auth';
-import { ApiError, fetchHealth, fetchSummary } from './client';
+import { ApiError, fetchHealth, fetchSummary, validateAdminToken } from './client';
 
 describe('API Client (AC-2A-04, AC-2A-05 / F-03)', () => {
   beforeEach(() => {
@@ -108,7 +108,7 @@ describe('API Client (AC-2A-04, AC-2A-05 / F-03)', () => {
       });
       vi.stubGlobal('fetch', fetchMock);
 
-      const isValid = await import('./client').then((m) => m.validateAdminToken('valid_token'));
+      const isValid = await validateAdminToken('valid_token');
       expect(isValid).toBe(true);
       expect(fetchMock).toHaveBeenCalledWith(
         '/admin/summary?days=7',
@@ -120,19 +120,17 @@ describe('API Client (AC-2A-04, AC-2A-05 / F-03)', () => {
       );
     });
 
-    it('returns false when server returns 401 or 403', async () => {
+    it.each([401, 403])('returns false when server returns %i', async (statusCode) => {
       const fetchMock = vi.fn().mockResolvedValue({
         ok: false,
-        status: 401,
+        status: statusCode,
       });
       vi.stubGlobal('fetch', fetchMock);
 
-      const { validateAdminToken } = await import('./client');
       expect(await validateAdminToken('unauthorized_token')).toBe(false);
     });
 
     it('returns false for empty or whitespace-only token', async () => {
-      const { validateAdminToken } = await import('./client');
       expect(await validateAdminToken('   ')).toBe(false);
     });
 
@@ -143,7 +141,6 @@ describe('API Client (AC-2A-04, AC-2A-05 / F-03)', () => {
       });
       vi.stubGlobal('fetch', fetchMock);
 
-      const { validateAdminToken } = await import('./client');
       await expect(validateAdminToken('token_500')).rejects.toThrow(ApiError);
     });
   });

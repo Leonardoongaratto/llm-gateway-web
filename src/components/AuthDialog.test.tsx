@@ -129,4 +129,42 @@ describe('AuthDialog Component (AC-2A-05 / F-03)', () => {
       expect(onClose).not.toHaveBeenCalled();
     });
   });
+
+  it('traps focus inside the dialog with Tab and Shift+Tab', async () => {
+    const user = userEvent.setup();
+    render(<AuthDialog isOpen={true} onClose={vi.fn()} onSuccess={vi.fn()} />);
+
+    const input = screen.getByPlaceholderText('Ex: lgw_admin_live_...');
+    const cancelBtn = screen.getByRole('button', { name: /cancelar/i });
+    const submitBtn = screen.getByRole('button', { name: /salvar/i });
+
+    expect(document.activeElement).toBe(input);
+
+    // Shift+Tab from first element (input) wraps to last element (submit button)
+    await user.keyboard('{Shift>}{Tab}{/Shift}');
+    expect(document.activeElement).toBe(submitBtn);
+
+    // Tab from last element (submit button) wraps to first element (input)
+    await user.keyboard('{Tab}');
+    expect(document.activeElement).toBe(input);
+
+    // Normal Tab moves to cancel button
+    await user.keyboard('{Tab}');
+    expect(document.activeElement).toBe(cancelBtn);
+  });
+
+  it('restores focus to previous active element when unmounted', () => {
+    const triggerBtn = document.createElement('button');
+    triggerBtn.textContent = 'Open Dialog';
+    document.body.appendChild(triggerBtn);
+    triggerBtn.focus();
+    expect(document.activeElement).toBe(triggerBtn);
+
+    const { unmount } = render(<AuthDialog isOpen={true} onClose={vi.fn()} onSuccess={vi.fn()} />);
+    expect(document.activeElement).not.toBe(triggerBtn);
+
+    unmount();
+    expect(document.activeElement).toBe(triggerBtn);
+    document.body.removeChild(triggerBtn);
+  });
 });

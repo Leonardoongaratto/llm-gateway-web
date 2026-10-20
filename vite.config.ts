@@ -1,36 +1,27 @@
 import react from '@vitejs/plugin-react';
-import type { Plugin } from 'vite';
+import type { Connect, Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 
 function dashboardRedirectPlugin(): Plugin {
+  const setupRedirect = (server: { middlewares: Connect.Server }) => {
+    const handler: Connect.NextHandleFunction = (req, res, next) => {
+      const rawUrl = req.url || '';
+      const [pathname, search] = rawUrl.split('?');
+      if (pathname === '/dashboard') {
+        const query = search ? `?${search}` : '';
+        res.writeHead(302, { Location: `/dashboard/${query}` });
+        res.end();
+        return;
+      }
+      next();
+    };
+    server.middlewares.use(handler);
+  };
+
   return {
     name: 'dashboard-redirect',
-    configureServer(server) {
-      server.middlewares.use((req, res, next) => {
-        const rawUrl = req.url || '';
-        const [pathname, search] = rawUrl.split('?');
-        if (pathname === '/dashboard') {
-          const query = search ? `?${search}` : '';
-          res.writeHead(302, { Location: `/dashboard/${query}` });
-          res.end();
-          return;
-        }
-        next();
-      });
-    },
-    configurePreviewServer(server) {
-      server.middlewares.use((req, res, next) => {
-        const rawUrl = req.url || '';
-        const [pathname, search] = rawUrl.split('?');
-        if (pathname === '/dashboard') {
-          const query = search ? `?${search}` : '';
-          res.writeHead(302, { Location: `/dashboard/${query}` });
-          res.end();
-          return;
-        }
-        next();
-      });
-    },
+    configureServer: setupRedirect,
+    configurePreviewServer: setupRedirect,
   };
 }
 

@@ -119,6 +119,8 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activePath, onNavigate }) => {
+  const normalizedActive = activePath.replace(/\/+$/, '') || '/';
+
   return (
     <aside className="glass-nav sidebar-container" role="navigation" aria-label="Menu Principal">
       <div className="sidebar-brand">
@@ -135,7 +137,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePath, onNavigate }) => {
 
       <nav className="sidebar-nav-list">
         {NAV_ITEMS.map((item) => {
-          const normalizedActive = activePath.replace(/\/+$/, '') || '/';
           const isActive =
             item.path === '/dashboard'
               ? normalizedActive === '/dashboard' || normalizedActive === '/'

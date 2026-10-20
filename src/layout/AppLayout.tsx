@@ -79,6 +79,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     document.title = `${title} · LLM Gateway`;
   }, [title]);
 
+  const handleAuthClose = React.useCallback(() => {
+    setIsAuthOpen(false);
+  }, []);
+
   return (
     <PeriodContext.Provider
       value={{
@@ -104,7 +108,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
         <AuthDialog
           isOpen={isAuthOpen}
-          onClose={() => setIsAuthOpen(false)}
+          onClose={handleAuthClose}
           onSuccess={() => {
             setIsAuthOpen(false);
             triggerRefresh();

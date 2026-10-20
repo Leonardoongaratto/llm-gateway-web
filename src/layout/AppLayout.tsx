@@ -1,0 +1,94 @@
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { onAuthRequired } from '../api/auth';
+import { AuthDialog } from '../components/AuthDialog';
+import { Sidebar } from './Sidebar';
+import { Toolbar, type PeriodDays } from './Toolbar';
+
+const ROUTE_TITLES: Record<string, string> = {
+  '/dashboard': 'Visão Geral',
+  '/dashboard/projetos': 'Projetos e Chaves',
+  '/dashboard/provedores': 'Provedores e Modelos',
+  '/dashboard/eventos': 'Auditoria e Eventos',
+  '/dashboard/ajustes': 'Ajustes e Configurações',
+};
+
+interface PeriodContextType {
+  period: PeriodDays;
+  setPeriod: (period: PeriodDays) => void;
+}
+
+const PeriodContext = createContext<PeriodContextType>({
+  period: 30,
+  setPeriod: () => {},
+});
+
+export const usePeriod = () => useContext(PeriodContext);
+
+interface AppLayoutProps {
+  children: React.ReactNode;
+}
+
+export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+  const location = useLocation();
+  const [period, setPeriodState] = useState<PeriodDays>(() => {
+    try {
+      const stored = localStorage.getItem('lgw_period_days');
+      if (stored === '7' || stored === '30' || stored === '90') {
+        return parseInt(stored, 10) as PeriodDays;
+      }
+    } catch {
+      // localStorage indisponível
+    }
+    return 30;
+  });
+
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthRequired(() => {
+      setIsAuthOpen(true);
+    });
+    return unsubscribe;
+  }, []);
+
+  const handlePeriodChange = (nextPeriod: PeriodDays) => {
+    setPeriodState(nextPeriod);
+    try {
+      localStorage.setItem('lgw_period_days', String(nextPeriod));
+    } catch {
+      // localStorage indisponível
+    }
+  };
+
+  const currentPath = location.pathname;
+  const matchedRoute = Object.entries(ROUTE_TITLES)
+    .sort(([a], [b]) => b.length - a.length)
+    .find(([routePath]) => currentPath === routePath || currentPath.startsWith(`${routePath}/`));
+  const title = matchedRoute ? matchedRoute[1] : 'Visão Geral';
+
+  return (
+    <PeriodContext.Provider value={{ period, setPeriod: handlePeriodChange }}>
+      <div className="app-shell">
+        <Sidebar activePath={currentPath} />
+
+        <div className="main-content-wrapper">
+          <Toolbar
+            title={title}
+            period={period}
+            onPeriodChange={handlePeriodChange}
+            onAuthClick={() => setIsAuthOpen(true)}
+          />
+
+          <main className="content-body">{children}</main>
+        </div>
+
+        <AuthDialog
+          isOpen={isAuthOpen}
+          onClose={() => setIsAuthOpen(false)}
+          onSuccess={() => setIsAuthOpen(false)}
+        />
+      </div>
+    </PeriodContext.Provider>
+  );
+};

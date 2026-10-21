@@ -2,14 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MetricCardsGrid } from './MetricCardsGrid';
 
-describe('MetricCardsGrid (AC-18-Web, AC-19-Web, F-08)', () => {
-  it('renders all 4 KPI cards with Apple HIG layout and proper formatting', () => {
+describe('MetricCardsGrid (AC-18-Web, AC-19-Web, F-08, BUG-01, BUG-04)', () => {
+  it('renders all 4 KPI cards with Apple HIG layout and proper formatting when telemetry is present', () => {
     render(
       <MetricCardsGrid
         spendMicros={137_090_585}
         prevSpendMicros={141_859_142}
         projectedMonthMicros={258_941_176}
         monthlyBudgetMicros={200_000_000}
+        monthSpendMicros={137_090_585}
         totalRequests={1250}
         cacheSavingsMicros={18_400_000}
         cacheRatePercent={34}
@@ -52,13 +53,22 @@ describe('MetricCardsGrid (AC-18-Web, AC-19-Web, F-08)', () => {
     expect(screen.getByText('↑ 20.0%')).toBeInTheDocument();
   });
 
-  it('provides zero/fallback defaults when optional cache and budget are omitted', () => {
+  it('displays explicit unavailable/unconfigured states when telemetry is missing (BUG-01)', () => {
     render(
-      <MetricCardsGrid spendMicros={0} prevSpendMicros={0} projectedMonthMicros={0} totalRequests={0} />,
+      <MetricCardsGrid
+        spendMicros={10_000_000}
+        prevSpendMicros={10_000_000}
+        projectedMonthMicros={20_000_000}
+        totalRequests={100}
+      />,
     );
 
-    const zeros = screen.getAllByText('$0.00');
-    expect(zeros.length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText('0% via cache')).toBeInTheDocument();
+    expect(screen.getByText('$10.00')).toBeInTheDocument();
+    expect(screen.getByText('Orçamento mensal não configurado')).toBeInTheDocument();
+    expect(screen.getByText('chamadas roteadas')).toBeInTheDocument();
+    expect(screen.getByText('telemetria de cache indisponível')).toBeInTheDocument();
+    expect(screen.queryByText('$200.00')).not.toBeInTheDocument();
+    expect(screen.queryByText('$18.40')).not.toBeInTheDocument();
+    expect(screen.queryByText('34% via cache')).not.toBeInTheDocument();
   });
 });

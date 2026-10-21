@@ -3,7 +3,7 @@ import { microsToUsd } from '../../format/formatters';
 
 export interface BudgetGaugeProps {
   spendMicros: number;
-  budgetLimitMicros: number;
+  budgetLimitMicros?: number;
   projectedMicros?: number;
   className?: string;
 }
@@ -14,22 +14,25 @@ export const BudgetGauge: React.FC<BudgetGaugeProps> = ({
   projectedMicros,
   className = '',
 }) => {
-  const percentUsed = budgetLimitMicros > 0 ? Math.round((spendMicros / budgetLimitMicros) * 100) : 0;
-  const clampedWidth = Math.min(Math.max(percentUsed, 0), 100);
+  const hasBudget = typeof budgetLimitMicros === 'number' && budgetLimitMicros > 0;
+  const percentUsed = hasBudget ? Math.round((spendMicros / budgetLimitMicros) * 100) : null;
+  const clampedWidth = percentUsed !== null ? Math.min(Math.max(percentUsed, 0), 100) : 0;
 
   let colorLevel: 'success' | 'warning' | 'danger' = 'success';
   let fillColor = 'var(--hig-success, #34c759)';
 
-  if (percentUsed >= 90) {
-    colorLevel = 'danger';
-    fillColor = 'var(--hig-danger, #ff3b30)';
-  } else if (percentUsed >= 70) {
-    colorLevel = 'warning';
-    fillColor = 'var(--hig-warning, #ff9500)';
+  if (percentUsed !== null) {
+    if (percentUsed >= 90) {
+      colorLevel = 'danger';
+      fillColor = 'var(--hig-danger, #ff3b30)';
+    } else if (percentUsed >= 70) {
+      colorLevel = 'warning';
+      fillColor = 'var(--hig-warning, #ff9500)';
+    }
   }
 
   const spendFormatted = microsToUsd(spendMicros).replace('$', '');
-  const limitFormatted = microsToUsd(budgetLimitMicros).replace('$', '');
+  const limitFormatted = hasBudget ? microsToUsd(budgetLimitMicros).replace('$', '') : null;
   const projectedFormatted =
     projectedMicros !== undefined ? microsToUsd(projectedMicros).replace('$', '') : null;
 
@@ -52,16 +55,20 @@ export const BudgetGauge: React.FC<BudgetGaugeProps> = ({
             color: 'var(--hig-text-primary)',
           }}
         >
-          {percentUsed}%
+          {percentUsed !== null ? `${percentUsed}%` : '—'}
         </span>
       </div>
 
       <div
         role="meter"
-        aria-valuenow={percentUsed}
+        aria-valuenow={percentUsed ?? 0}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-valuetext={`${percentUsed}% do orçamento mensal consumido`}
+        aria-valuetext={
+          percentUsed !== null
+            ? `${percentUsed}% do orçamento mensal consumido`
+            : 'Orçamento mensal não configurado'
+        }
         data-color-level={colorLevel}
         style={{
           position: 'relative',
@@ -78,7 +85,7 @@ export const BudgetGauge: React.FC<BudgetGaugeProps> = ({
           style={{
             width: `${clampedWidth}%`,
             height: '100%',
-            background: fillColor,
+            background: hasBudget ? fillColor : 'transparent',
             borderRadius: 'var(--hig-radius-full, 9999px)',
             transition: 'width 0.3s ease',
           }}
@@ -94,9 +101,13 @@ export const BudgetGauge: React.FC<BudgetGaugeProps> = ({
           gap: '2px',
         }}
       >
-        <span className="tabular-nums">
-          US$ {spendFormatted} gasto de US$ {limitFormatted} limite
-        </span>
+        {hasBudget ? (
+          <span className="tabular-nums">
+            US$ {spendFormatted} gasto de US$ {limitFormatted} limite
+          </span>
+        ) : (
+          <span>Orçamento mensal não configurado</span>
+        )}
         {projectedFormatted && (
           <span className="tabular-nums" style={{ color: 'var(--hig-text-tertiary, #86868b)' }}>
             Projeção: US$ {projectedFormatted}

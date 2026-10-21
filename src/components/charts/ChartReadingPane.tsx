@@ -12,6 +12,7 @@ export interface SelectedDayInfo {
   spend_micros: number;
   requests: number;
   tokens?: number;
+  isEstimated?: boolean;
   providers?: ProviderShare[];
 }
 
@@ -24,12 +25,14 @@ const PROVIDER_COLORS: Record<string, string> = {
   anthropic: 'var(--hig-provider-anthropic, #d97706)',
   openai: 'var(--hig-provider-openai, #06b6d4)',
   gemini: 'var(--hig-provider-gemini, #6366f1)',
+  total: 'var(--hig-accent, #0071e3)',
 };
 
 const PROVIDER_NAMES: Record<string, string> = {
   anthropic: 'Anthropic',
   openai: 'OpenAI',
   gemini: 'Gemini',
+  total: 'Total',
 };
 
 export const ChartReadingPane: React.FC<ChartReadingPaneProps> = ({ selectedDay, className = '' }) => {
@@ -100,6 +103,19 @@ export const ChartReadingPane: React.FC<ChartReadingPaneProps> = ({ selectedDay,
         <span style={{ color: 'var(--hig-text-secondary)', fontSize: '12px' }}>
           ({formattedRequests} requisições)
         </span>
+        {selectedDay.isEstimated && (
+          <span
+            style={{
+              fontSize: '11px',
+              color: 'var(--hig-text-tertiary)',
+              background: 'var(--hig-fill-secondary, rgba(120, 120, 128, 0.12))',
+              padding: '1px 6px',
+              borderRadius: '4px',
+            }}
+          >
+            rateio estimado
+          </span>
+        )}
       </div>
 
       {selectedDay.providers && selectedDay.providers.length > 0 && (

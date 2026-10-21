@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ModelShareBars } from './ModelShareBars';
 
-describe('ModelShareBars (AC-20, F-11)', () => {
+describe('ModelShareBars (AC-20, F-11, BUG-05)', () => {
   const sampleModels = [
     {
       model: 'gpt-4o',
@@ -36,7 +36,6 @@ describe('ModelShareBars (AC-20, F-11)', () => {
     const modelNames = container.querySelectorAll('.model-share-name');
     expect(modelNames.length).toBe(4);
 
-    // Order must be Opus, Sonnet, GPT-4o, GPT-4o-mini
     expect(modelNames[0]).toHaveTextContent('claude-3-opus-20240229');
     expect(modelNames[1]).toHaveTextContent('claude-3-5-sonnet-20241022');
     expect(modelNames[2]).toHaveTextContent('gpt-4o');
@@ -56,10 +55,32 @@ describe('ModelShareBars (AC-20, F-11)', () => {
     expect(Math.abs(sum - 100.0)).toBeLessThanOrEqual(0.1);
   });
 
+  it('calculates 100% sum internally regardless of divergent external total (BUG-05)', () => {
+    const { container } = render(<ModelShareBars models={sampleModels} totalSpendMicros={999_999_999} />);
+
+    const percentElements = container.querySelectorAll('.model-share-percent');
+    let sum = 0;
+    percentElements.forEach((el) => {
+      const val = parseFloat(el.textContent?.replace('%', '') ?? '0');
+      sum += val;
+    });
+
+    expect(Math.abs(sum - 100.0)).toBeLessThanOrEqual(0.1);
+  });
+
+  it('handles models with total 0 gracefully', () => {
+    const zeroModels = [
+      { model: 'model-a', spend_micros: 0, requests: 0, tokens: 0 },
+      { model: 'model-b', spend_micros: 0, requests: 0, tokens: 0 },
+    ];
+
+    render(<ModelShareBars models={zeroModels} />);
+    expect(screen.getByText(/Nenhum dado de modelo disponível/i)).toBeInTheDocument();
+  });
+
   it('displays formatted spend, requests, and tokens for each model', () => {
     render(<ModelShareBars models={sampleModels} />);
 
-    // Check Opus row values
     expect(screen.getByText('claude-3-opus-20240229')).toBeInTheDocument();
     expect(screen.getByText('$101.33')).toBeInTheDocument();
     expect(screen.getAllByText(/31 reqs/i).length).toBe(4);

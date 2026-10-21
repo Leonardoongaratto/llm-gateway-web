@@ -7,6 +7,7 @@ export interface SummaryPhraseProps {
   prevSpendMicros: number;
   projectedMonthMicros: number;
   monthlyBudgetMicros?: number;
+  monthSpendMicros?: number;
   className?: string;
 }
 
@@ -15,13 +16,17 @@ export const SummaryPhrase: React.FC<SummaryPhraseProps> = ({
   spendMicros,
   prevSpendMicros,
   projectedMonthMicros,
-  monthlyBudgetMicros = 200_000_000,
+  monthlyBudgetMicros,
+  monthSpendMicros,
   className = '',
 }) => {
   const formattedSpend = microsToUsd(spendMicros);
   const change = formatPercentChange(spendMicros, prevSpendMicros);
-  const percentUsed = monthlyBudgetMicros > 0 ? Math.round((spendMicros / monthlyBudgetMicros) * 100) : 0;
   const formattedProjected = microsToUsd(projectedMonthMicros);
+
+  const hasBudget = typeof monthlyBudgetMicros === 'number' && monthlyBudgetMicros > 0;
+  const monthSpend = monthSpendMicros ?? spendMicros;
+  const percentUsed = hasBudget ? Math.round((monthSpend / monthlyBudgetMicros) * 100) : 0;
 
   const trendSymbol = change.trend === 'up' ? '↑' : change.trend === 'down' ? '↓' : '';
   const absFormatted = change.formatted.replace(/^[+-]/, '');
@@ -63,15 +68,31 @@ export const SummaryPhrase: React.FC<SummaryPhraseProps> = ({
           {trendSymbol ? `${trendSymbol} ` : ''}
           {absFormatted}
         </span>
-        ). Seu orçamento mensal está em{' '}
-        <strong className="tabular-nums" style={{ fontWeight: 600 }}>
-          {percentUsed}%
-        </strong>{' '}
-        com projeção de{' '}
-        <strong className="tabular-nums" style={{ fontWeight: 600 }}>
-          {formattedProjected}
-        </strong>
-        .
+        ).{' '}
+        {hasBudget ? (
+          <>
+            Seu orçamento mensal está em{' '}
+            <strong className="tabular-nums" style={{ fontWeight: 600 }}>
+              {percentUsed}%
+            </strong>{' '}
+            com projeção de{' '}
+            <strong className="tabular-nums" style={{ fontWeight: 600 }}>
+              {formattedProjected}
+            </strong>
+            .
+          </>
+        ) : (
+          <>
+            Projeção de fechamento do mês em{' '}
+            <strong className="tabular-nums" style={{ fontWeight: 600 }}>
+              {formattedProjected}
+            </strong>{' '}
+            <span style={{ color: 'var(--hig-text-secondary)', fontSize: '13px' }}>
+              (orçamento não configurado)
+            </span>
+            .
+          </>
+        )}
       </p>
     </section>
   );

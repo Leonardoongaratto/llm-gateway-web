@@ -140,6 +140,17 @@ describe('ProjectsPage, ProvidersPage and EventsPage states', () => {
 
   describe('EventsPage', () => {
     it('renders EmptyState for NATS events', async () => {
+      vi.spyOn(client, 'fetchSummary').mockResolvedValueOnce({
+        period_days: 30,
+        start_date: '2026-09-17',
+        end_date: '2026-10-17',
+        spend_micros: 0,
+        prev_spend_micros: 0,
+        projected_month_micros: 0,
+        daily: [],
+        events: [],
+      });
+
       render(<EventsPage />);
 
       await waitFor(() => {

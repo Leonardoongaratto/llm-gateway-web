@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ChartReadingPane } from './ChartReadingPane';
 
-describe('ChartReadingPane (AC-22, AC-23)', () => {
+describe('ChartReadingPane (AC-22, AC-23, BUG-03)', () => {
   const sampleDay = {
     date: '2026-10-17',
     spend_micros: 4_347_850,
@@ -31,6 +31,12 @@ describe('ChartReadingPane (AC-22, AC-23)', () => {
     expect(screen.getByText('$3.80')).toBeInTheDocument();
     expect(screen.getByText('OpenAI:')).toBeInTheDocument();
     expect(screen.getByText('$0.55')).toBeInTheDocument();
+  });
+
+  it('indicates estimated provider rateio when isEstimated is true (BUG-03)', () => {
+    render(<ChartReadingPane selectedDay={{ ...sampleDay, isEstimated: true }} />);
+
+    expect(screen.getByText(/rateio estimado/i)).toBeInTheDocument();
   });
 
   it('renders fallback when no day is selected', () => {

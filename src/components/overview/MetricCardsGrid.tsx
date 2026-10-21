@@ -7,6 +7,7 @@ export interface MetricCardsGridProps {
   prevSpendMicros: number;
   projectedMonthMicros: number;
   monthlyBudgetMicros?: number;
+  monthSpendMicros?: number;
   totalRequests: number;
   cacheSavingsMicros?: number;
   cacheRatePercent?: number;
@@ -17,10 +18,11 @@ export const MetricCardsGrid: React.FC<MetricCardsGridProps> = ({
   spendMicros,
   prevSpendMicros,
   projectedMonthMicros,
-  monthlyBudgetMicros = 200_000_000,
+  monthlyBudgetMicros,
+  monthSpendMicros,
   totalRequests,
-  cacheSavingsMicros = 0,
-  cacheRatePercent = 0,
+  cacheSavingsMicros,
+  cacheRatePercent,
   className = '',
 }) => {
   const formattedSpend = microsToUsd(spendMicros);
@@ -85,7 +87,6 @@ export const MetricCardsGrid: React.FC<MetricCardsGridProps> = ({
         width: '100%',
       }}
     >
-      {/* Card 1: Gasto no período */}
       <div style={cardStyle} data-testid="metric-card-spend">
         <div>
           <div style={labelStyle}>Gasto no período</div>
@@ -114,17 +115,15 @@ export const MetricCardsGrid: React.FC<MetricCardsGridProps> = ({
         <div style={subtextStyle}>vs. período anterior</div>
       </div>
 
-      {/* Card 2: Orçamento do mês */}
       <div style={cardStyle} data-testid="metric-card-budget">
         <div style={labelStyle}>Orçamento do mês</div>
         <BudgetGauge
-          spendMicros={spendMicros}
+          spendMicros={monthSpendMicros ?? spendMicros}
           budgetLimitMicros={monthlyBudgetMicros}
           projectedMicros={projectedMonthMicros}
         />
       </div>
 
-      {/* Card 3: Total de Requisições */}
       <div style={cardStyle} data-testid="metric-card-requests">
         <div>
           <div style={labelStyle}>Total de Requisições</div>
@@ -133,27 +132,34 @@ export const MetricCardsGrid: React.FC<MetricCardsGridProps> = ({
           </div>
         </div>
         <div style={subtextStyle}>
-          <span
-            className="tabular-nums"
-            style={{
-              fontWeight: 500,
-              color: 'var(--hig-text-primary)',
-            }}
-          >
-            {cacheRatePercent}% via cache
-          </span>
+          {typeof cacheRatePercent === 'number' ? (
+            <span
+              className="tabular-nums"
+              style={{
+                fontWeight: 500,
+                color: 'var(--hig-text-primary)',
+              }}
+            >
+              {cacheRatePercent}% via cache
+            </span>
+          ) : (
+            <span>chamadas roteadas</span>
+          )}
         </div>
       </div>
 
-      {/* Card 4: Economia com cache */}
       <div style={cardStyle} data-testid="metric-card-cache-savings">
         <div>
           <div style={labelStyle}>Economia com cache</div>
           <div className="tabular-nums" style={valueStyle}>
-            {microsToUsd(cacheSavingsMicros)}
+            {typeof cacheSavingsMicros === 'number' ? microsToUsd(cacheSavingsMicros) : '—'}
           </div>
         </div>
-        <div style={subtextStyle}>respostas servidas da memória</div>
+        <div style={subtextStyle}>
+          {typeof cacheSavingsMicros === 'number'
+            ? 'respostas servidas da memória'
+            : 'telemetria de cache indisponível'}
+        </div>
       </div>
     </div>
   );

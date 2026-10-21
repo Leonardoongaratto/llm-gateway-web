@@ -162,7 +162,9 @@ describe('OverviewPage Component (Etapa 2B Integration)', () => {
       expect(screen.getByTestId('metric-card-cache-savings')).toBeInTheDocument();
 
       // 4. Daily Usage Chart
-      expect(screen.getByRole('region', { name: /gráfico diário de consumo/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('region', { name: /gráfico de barras empilhadas de consumo diário/i }),
+      ).toBeInTheDocument();
 
       // 5. Model Share Bars
       expect(screen.getByText('Participação por Modelo')).toBeInTheDocument();

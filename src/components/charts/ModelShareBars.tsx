@@ -29,11 +29,7 @@ function getModelColor(modelName: string): string {
   return 'var(--hig-accent, #0071e3)';
 }
 
-export const ModelShareBars: React.FC<ModelShareBarsProps> = ({
-  models,
-  totalSpendMicros,
-  className = '',
-}) => {
+export const ModelShareBars: React.FC<ModelShareBarsProps> = ({ models, className = '' }) => {
   if (!models || models.length === 0) {
     return (
       <div
@@ -53,20 +49,47 @@ export const ModelShareBars: React.FC<ModelShareBarsProps> = ({
     );
   }
 
-  // Sort descending by spend
   const sorted = [...models].sort((a, b) => b.spend_micros - a.spend_micros);
+  const modelsTotal = sorted.reduce((acc, m) => acc + m.spend_micros, 0);
 
-  const total = totalSpendMicros ?? sorted.reduce((acc, m) => acc + m.spend_micros, 0);
+  if (modelsTotal === 0) {
+    return (
+      <div
+        className={`model-share-card ${className}`.trim()}
+        style={{
+          background: 'var(--hig-bg-card)',
+          borderRadius: 'var(--hig-radius-lg, 12px)',
+          border: '1px solid var(--hig-border)',
+          padding: '20px',
+          color: 'var(--hig-text-secondary)',
+          textAlign: 'center',
+          fontSize: '13px',
+        }}
+      >
+        Nenhum dado de modelo disponível no período.
+      </div>
+    );
+  }
 
-  // Calculate percentages ensuring sum is 100.0% (± 0.1%)
-  const rawPercentages = sorted.map((m) => (total > 0 ? (m.spend_micros / total) * 100 : 0));
-  const roundedPercentages = rawPercentages.map((p) => Math.round(p * 10) / 10);
-  const currentSum = roundedPercentages.reduce((acc, p) => acc + p, 0);
+  const rawPercentages = sorted.map((m) => (m.spend_micros / modelsTotal) * 100);
+  const basePercentages = rawPercentages.map((p) => Math.floor(p * 10) / 10);
+  const remainders = rawPercentages.map((p, idx) => ({
+    index: idx,
+    remainder: p - (basePercentages[idx] ?? 0),
+  }));
 
-  // If there's a rounding drift (e.g., 99.8 or 100.2), distribute to the largest item
-  if (total > 0 && Math.abs(currentSum - 100) > 0.1 && roundedPercentages.length > 0) {
-    const drift = Math.round((100 - currentSum) * 10) / 10;
-    roundedPercentages[0] = Math.round((roundedPercentages[0]! + drift) * 10) / 10;
+  const currentSumTenths = Math.round(basePercentages.reduce((a, b) => a + b, 0) * 10);
+  const targetTenths = 1000;
+  const missingTenths = Math.max(0, targetTenths - currentSumTenths);
+
+  remainders.sort((a, b) => b.remainder - a.remainder);
+  const finalPercentages = [...basePercentages];
+
+  for (let i = 0; i < missingTenths && i < remainders.length; i++) {
+    const idx = remainders[i]?.index;
+    if (idx !== undefined && finalPercentages[idx] !== undefined) {
+      finalPercentages[idx] = Math.round((finalPercentages[idx] + 0.1) * 10) / 10;
+    }
   }
 
   return (
@@ -102,7 +125,7 @@ export const ModelShareBars: React.FC<ModelShareBarsProps> = ({
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {sorted.map((item, index) => {
-          const pct = roundedPercentages[index] ?? 0;
+          const pct = finalPercentages[index] ?? 0;
           const color = getModelColor(item.model);
 
           return (
@@ -153,7 +176,6 @@ export const ModelShareBars: React.FC<ModelShareBarsProps> = ({
                 </span>
               </div>
 
-              {/* Progress track & bar */}
               <div
                 style={{
                   width: '100%',

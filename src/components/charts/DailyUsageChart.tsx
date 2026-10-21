@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { formatDateShort, microsToUsd } from '../../format/formatters';
+import React, { useId, useState } from 'react';
+import { formatDateShort, formatNumber, microsToUsd } from '../../format/formatters';
 import { ChartReadingPane, SelectedDayInfo } from './ChartReadingPane';
 
 export interface DailyUsageChartItem {
@@ -30,6 +30,12 @@ export const DailyUsageChart: React.FC<DailyUsageChartProps> = ({
   className = '',
   onSelectDay,
 }) => {
+  const baseId = useId().replace(/:/g, '');
+  const descId = `${baseId}-chart-desc`;
+  const hatchId = `${baseId}-hatch`;
+  const dotsId = `${baseId}-dots`;
+  const smoothId = `${baseId}-smooth`;
+
   const [selectedIndex, setSelectedIndex] = useState<number>(data.length > 0 ? data.length - 1 : 0);
   const activeIndex = data.length > 0 ? Math.min(Math.max(selectedIndex, 0), data.length - 1) : 0;
 
@@ -37,7 +43,7 @@ export const DailyUsageChart: React.FC<DailyUsageChartProps> = ({
     return (
       <section
         role="region"
-        aria-label={`Gráfico diário de consumo dos últimos ${periodDays} dias`}
+        aria-label={`Gráfico de barras empilhadas de consumo diário dos últimos ${periodDays} dias`}
         className={`daily-usage-chart ${className}`.trim()}
         style={{
           background: 'var(--hig-bg-card)',
@@ -53,48 +59,57 @@ export const DailyUsageChart: React.FC<DailyUsageChartProps> = ({
     );
   }
 
-  // Resolve provider breakdown for a day
   const getDayProviders = (item: DailyUsageChartItem) => {
     if (item.by_provider && item.by_provider.length > 0) {
-      return item.by_provider.map((p) => ({
-        provider: p.provider.toLowerCase(),
-        spend_micros: p.spend_micros,
-        requests: p.requests ?? 0,
-      }));
+      return {
+        providers: item.by_provider.map((p) => ({
+          provider: p.provider.toLowerCase(),
+          spend_micros: p.spend_micros,
+          requests: p.requests ?? 0,
+        })),
+        isEstimated: false,
+      };
     }
 
     if (providerSummary && providerSummary.length > 0) {
       const totalSummarySpend = providerSummary.reduce((acc, p) => acc + p.spend_micros, 0);
       if (totalSummarySpend > 0) {
-        return providerSummary.map((p) => {
-          const ratio = p.spend_micros / totalSummarySpend;
-          const share = Math.round(item.spend_micros * ratio);
-          return {
-            provider: p.provider.toLowerCase(),
-            spend_micros: share,
-            requests: Math.round(item.requests * ratio),
-          };
-        });
+        return {
+          providers: providerSummary.map((p) => {
+            const ratio = p.spend_micros / totalSummarySpend;
+            const share = Math.round(item.spend_micros * ratio);
+            return {
+              provider: p.provider.toLowerCase(),
+              spend_micros: share,
+              requests: Math.round(item.requests * ratio),
+            };
+          }),
+          isEstimated: true,
+        };
       }
     }
 
-    // Default to anthropic
-    return [
-      {
-        provider: 'anthropic',
-        spend_micros: item.spend_micros,
-        requests: item.requests,
-      },
-    ];
+    return {
+      providers: [
+        {
+          provider: 'total',
+          spend_micros: item.spend_micros,
+          requests: item.requests,
+        },
+      ],
+      isEstimated: false,
+    };
   };
 
   const selectedItem = data[activeIndex] ?? data[data.length - 1]!;
+  const dayResolved = getDayProviders(selectedItem);
   const selectedDayInfo: SelectedDayInfo = {
     date: selectedItem.date,
     spend_micros: selectedItem.spend_micros,
     requests: selectedItem.requests,
     tokens: selectedItem.tokens,
-    providers: getDayProviders(selectedItem),
+    isEstimated: dayResolved.isEstimated,
+    providers: dayResolved.providers,
   };
 
   const handleSelectIndex = (idx: number) => {
@@ -121,7 +136,6 @@ export const DailyUsageChart: React.FC<DailyUsageChartProps> = ({
     }
   };
 
-  // Dimensions
   const svgWidth = 800;
   const svgHeight = 260;
   const marginLeft = 16;
@@ -136,14 +150,16 @@ export const DailyUsageChart: React.FC<DailyUsageChartProps> = ({
 
   const barStep = chartWidth / data.length;
   const barWidth = Math.max(Math.min(barStep * 0.72, 28), 6);
-
-  // X-axis label stride to prevent overlapping
   const labelInterval = data.length > 30 ? 5 : data.length > 14 ? 3 : 1;
+
+  const startDateFormatted = formatDateShort(data[0]?.date ?? '');
+  const endDateFormatted = formatDateShort(data[data.length - 1]?.date ?? '');
 
   return (
     <section
       role="region"
-      aria-label={`Gráfico diário de consumo dos últimos ${periodDays} dias`}
+      aria-label={`Gráfico de barras empilhadas de consumo diário dos últimos ${periodDays} dias`}
+      aria-describedby={descId}
       className={`daily-usage-chart-card ${className}`.trim()}
       style={{
         background: 'var(--hig-bg-card)',
@@ -158,6 +174,11 @@ export const DailyUsageChart: React.FC<DailyUsageChartProps> = ({
         outline: 'none',
       }}
     >
+      <p id={descId} className="sr-only">
+        Gráfico de barras empilhadas de consumo diário para {periodDays} dias ({startDateFormatted} a{' '}
+        {endDateFormatted}). Eixo Y de $0.00 a {microsToUsd(maxSpend)}.
+      </p>
+
       <div
         style={{
           display: 'flex',
@@ -182,10 +203,8 @@ export const DailyUsageChart: React.FC<DailyUsageChartProps> = ({
         </span>
       </div>
 
-      {/* Reading pane highlighted and accessible */}
       <ChartReadingPane selectedDay={selectedDayInfo} />
 
-      {/* Interactive SVG Chart */}
       <div
         role="application"
         tabIndex={0}
@@ -209,9 +228,8 @@ export const DailyUsageChart: React.FC<DailyUsageChartProps> = ({
           }}
         >
           <defs>
-            {/* Pattern 1: Anthropic diagonal hatch */}
             <pattern
-              id="pattern-anthropic-hatch"
+              id={hatchId}
               width="6"
               height="6"
               patternUnits="userSpaceOnUse"
@@ -220,18 +238,15 @@ export const DailyUsageChart: React.FC<DailyUsageChartProps> = ({
               <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(255, 255, 255, 0.45)" strokeWidth="1.5" />
             </pattern>
 
-            {/* Pattern 2: OpenAI dots */}
-            <pattern id="pattern-openai-dots" width="6" height="6" patternUnits="userSpaceOnUse">
+            <pattern id={dotsId} width="6" height="6" patternUnits="userSpaceOnUse">
               <circle cx="3" cy="3" r="1.2" fill="rgba(255, 255, 255, 0.65)" />
             </pattern>
 
-            {/* Pattern 3: Gemini smooth / horizontal */}
-            <pattern id="pattern-gemini-smooth" width="6" height="6" patternUnits="userSpaceOnUse">
+            <pattern id={smoothId} width="6" height="6" patternUnits="userSpaceOnUse">
               <line x1="0" y1="3" x2="6" y2="3" stroke="rgba(255, 255, 255, 0.35)" strokeWidth="1" />
             </pattern>
           </defs>
 
-          {/* 3 Horizontal Grid lines (top, mid, bottom) */}
           <line
             className="chart-grid-line"
             x1={marginLeft}
@@ -259,7 +274,6 @@ export const DailyUsageChart: React.FC<DailyUsageChartProps> = ({
             stroke="var(--hig-border, rgba(0,0,0,0.08))"
           />
 
-          {/* Right Y-Axis labels */}
           <text
             className="chart-y-axis-label tabular-nums"
             x={svgWidth - marginRight + 8}
@@ -291,11 +305,10 @@ export const DailyUsageChart: React.FC<DailyUsageChartProps> = ({
             $0.00
           </text>
 
-          {/* Stacked Bars per Day */}
           {data.map((day, idx) => {
             const isSelected = idx === activeIndex;
             const x = marginLeft + idx * barStep + (barStep - barWidth) / 2;
-            const providers = getDayProviders(day);
+            const { providers } = getDayProviders(day);
 
             let currentBottomY = marginTop + chartHeight;
 
@@ -306,7 +319,6 @@ export const DailyUsageChart: React.FC<DailyUsageChartProps> = ({
                 onClick={() => handleSelectIndex(idx)}
                 style={{ cursor: 'pointer' }}
               >
-                {/* Selection column indicator background */}
                 {isSelected && (
                   <rect
                     x={x - 2}
@@ -318,13 +330,11 @@ export const DailyUsageChart: React.FC<DailyUsageChartProps> = ({
                   />
                 )}
 
-                {/* Stacked Provider Segments */}
                 {providers.map((p) => {
                   const segmentHeight = maxSpend > 0 ? (p.spend_micros / maxSpend) * chartHeight : 0;
                   if (segmentHeight < 0.5) return null;
 
                   const segY = currentBottomY - segmentHeight;
-                  // 1px separation between blocks
                   const finalHeight = Math.max(segmentHeight - 1, 1);
                   currentBottomY = segY;
 
@@ -333,32 +343,37 @@ export const DailyUsageChart: React.FC<DailyUsageChartProps> = ({
                       ? 'var(--hig-provider-anthropic, #d97706)'
                       : p.provider === 'openai'
                         ? 'var(--hig-provider-openai, #06b6d4)'
-                        : 'var(--hig-provider-gemini, #6366f1)';
+                        : p.provider === 'gemini'
+                          ? 'var(--hig-provider-gemini, #6366f1)'
+                          : 'var(--hig-accent, #0071e3)';
 
                   const patternId =
                     p.provider === 'anthropic'
-                      ? 'pattern-anthropic-hatch'
+                      ? hatchId
                       : p.provider === 'openai'
-                        ? 'pattern-openai-dots'
-                        : 'pattern-gemini-smooth';
+                        ? dotsId
+                        : p.provider === 'gemini'
+                          ? smoothId
+                          : null;
 
                   return (
                     <g key={p.provider}>
                       <rect x={x} y={segY} width={barWidth} height={finalHeight} fill={color} rx="1.5" />
-                      <rect
-                        x={x}
-                        y={segY}
-                        width={barWidth}
-                        height={finalHeight}
-                        fill={`url(#${patternId})`}
-                        pointerEvents="none"
-                        rx="1.5"
-                      />
+                      {patternId && (
+                        <rect
+                          x={x}
+                          y={segY}
+                          width={barWidth}
+                          height={finalHeight}
+                          fill={`url(#${patternId})`}
+                          pointerEvents="none"
+                          rx="1.5"
+                        />
+                      )}
                     </g>
                   );
                 })}
 
-                {/* Selected outline pin */}
                 {isSelected && (
                   <circle
                     cx={x + barWidth / 2}
@@ -368,7 +383,6 @@ export const DailyUsageChart: React.FC<DailyUsageChartProps> = ({
                   />
                 )}
 
-                {/* X-axis date label */}
                 {idx % labelInterval === 0 && (
                   <text
                     x={x + barWidth / 2}
@@ -387,7 +401,6 @@ export const DailyUsageChart: React.FC<DailyUsageChartProps> = ({
         </svg>
       </div>
 
-      {/* Screen Reader Hidden Table (AC-23) */}
       <table className="sr-only">
         <caption>
           Consumo diário por provedor nos últimos {periodDays} dias. Limite máximo: {microsToUsd(maxSpend)}.
@@ -404,19 +417,19 @@ export const DailyUsageChart: React.FC<DailyUsageChartProps> = ({
         </thead>
         <tbody>
           {data.map((d) => {
-            const provs = getDayProviders(d);
-            const anthropicSpend = provs.find((p) => p.provider === 'anthropic')?.spend_micros ?? 0;
-            const openaiSpend = provs.find((p) => p.provider === 'openai')?.spend_micros ?? 0;
-            const geminiSpend = provs.find((p) => p.provider === 'gemini')?.spend_micros ?? 0;
+            const { providers } = getDayProviders(d);
+            const anthropicSpend = providers.find((p) => p.provider === 'anthropic')?.spend_micros ?? 0;
+            const openaiSpend = providers.find((p) => p.provider === 'openai')?.spend_micros ?? 0;
+            const geminiSpend = providers.find((p) => p.provider === 'gemini')?.spend_micros ?? 0;
 
             return (
               <tr key={d.date}>
-                <td>{d.date}</td>
+                <td>{formatDateShort(d.date)}</td>
                 <td>{microsToUsd(d.spend_micros)}</td>
                 <td>{microsToUsd(anthropicSpend)}</td>
                 <td>{microsToUsd(openaiSpend)}</td>
                 <td>{microsToUsd(geminiSpend)}</td>
-                <td>{d.requests}</td>
+                <td>{formatNumber(d.requests)}</td>
               </tr>
             );
           })}

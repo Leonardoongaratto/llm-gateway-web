@@ -66,4 +66,13 @@ describe('Design Tokens Apple HIG (AC-2A-02, AC-2A-03, AC-25)', () => {
     expect(cssContent).toContain('.sr-only');
     expect(cssContent).toContain('clip: rect(0, 0, 0, 0)');
   });
+
+  it('defines responsive .metric-cards-grid with 1 col on mobile, 2 cols on tablet, and 4 cols on desktop without orphan cards (AC-SHOW-03)', () => {
+    expect(cssContent).toContain('.metric-cards-grid');
+    expect(cssContent).toContain('grid-template-columns: 1fr');
+    expect(cssContent).toContain('@media (min-width: 600px)');
+    expect(cssContent).toContain('grid-template-columns: repeat(2, 1fr)');
+    expect(cssContent).toContain('@media (min-width: 1024px)');
+    expect(cssContent).toContain('grid-template-columns: repeat(4, 1fr)');
+  });
 });

@@ -508,3 +508,23 @@ body {
   white-space: nowrap;
   border-width: 0;
 }
+
+/* Metric Cards Grid - Responsive Layout without orphan cards (AC-SHOW-03) */
+.metric-cards-grid {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 600px) {
+  .metric-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .metric-cards-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

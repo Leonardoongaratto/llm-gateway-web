@@ -71,4 +71,19 @@ describe('MetricCardsGrid (AC-18-Web, AC-19-Web, F-08, BUG-01, BUG-04)', () => {
     expect(screen.queryByText('$18.40')).not.toBeInTheDocument();
     expect(screen.queryByText('34% via cache')).not.toBeInTheDocument();
   });
+
+  it('renders .metric-cards-grid with exactly 4 card children for balanced 4-col or 2x2 layout (AC-SHOW-03)', () => {
+    render(
+      <MetricCardsGrid
+        spendMicros={10_000_000}
+        prevSpendMicros={10_000_000}
+        projectedMonthMicros={20_000_000}
+        totalRequests={100}
+      />,
+    );
+
+    const grid = screen.getByTestId('metric-cards-grid');
+    expect(grid).toHaveClass('metric-cards-grid');
+    expect(grid.children).toHaveLength(4);
+  });
 });

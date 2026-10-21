@@ -2,9 +2,9 @@ import { expect, test } from '@playwright/test';
 import { mockSummary } from './fixtures';
 
 test.describe('LLM Gateway Web Executive E2E (AC-25-E2E / F-14)', () => {
-  test('renders full dashboard, handles period switch, keyboard chart navigation and captures screenshots with zero console errors', async ({
+  test('renders full dashboard, handles period switch, and keyboard chart navigation with zero console errors', async ({
     page,
-  }, testInfo) => {
+  }) => {
     const consoleErrors: string[] = [];
     page.on('console', (msg) => {
       if (msg.type() === 'error') {
@@ -50,10 +50,6 @@ test.describe('LLM Gateway Web Executive E2E (AC-25-E2E / F-14)', () => {
     const tab7d = page.getByRole('tab', { name: '7 dias' });
     await tab7d.click();
     await expect(tab7d).toHaveAttribute('aria-selected', 'true');
-
-    await page.screenshot({
-      path: `docs/screenshots/${testInfo.project.name}-overview.png`,
-    });
 
     // force: true is required for fixed bottom navigation bar links in Playwright mobile viewports
     // because Playwright's scroll-into-view algorithm times out attempting to center fixed position elements.

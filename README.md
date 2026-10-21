@@ -1,6 +1,12 @@
 # LLM Gateway Web — Painel Executivo
 
-Interface executiva e operacional do **LLM Gateway**, desenvolvida sob os padrões rigorosos de design do **Apple Human Interface Guidelines (HIG)** para a web.
+[![CI](https://github.com/Leonardoongaratto/llm-gateway-web/actions/workflows/ci.yml/badge.svg)](https://github.com/Leonardoongaratto/llm-gateway-web/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![React](https://img.shields.io/badge/React-19.x-61dafb.svg)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+[![Coverage](https://img.shields.io/badge/coverage-%E2%89%A580%25-brightgreen.svg)](#-gates-mecânicos-obrigatórios)
+
+Interface executiva e operacional do [LLM Gateway](https://github.com/Leonardoongaratto/llm-gateway), desenvolvida sob os padrões rigorosos de design do **Apple Human Interface Guidelines (HIG)** para a web.
 
 O painel fornece visibilidade em tempo real sobre consumo financeiro de APIs de Inteligência Artificial (OpenAI, Anthropic Claude, Google Gemini), alocação por chaves virtuais de projeto, saúde operacional de provedores, alertas de teto orçamentário e auditoria contábil.
 

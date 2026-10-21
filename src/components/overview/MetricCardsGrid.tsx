@@ -78,15 +78,7 @@ export const MetricCardsGrid: React.FC<MetricCardsGridProps> = ({
   };
 
   return (
-    <div
-      className={`metric-cards-grid ${className}`.trim()}
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-        gap: '16px',
-        width: '100%',
-      }}
-    >
+    <div className={`metric-cards-grid ${className}`.trim()} data-testid="metric-cards-grid">
       <div style={cardStyle} data-testid="metric-card-spend">
         <div>
           <div style={labelStyle}>Gasto no período</div>

@@ -16,7 +16,9 @@ export interface ModelSpend {
 
 export interface KeySpend {
   key_id: string;
+  name?: string;
   spend_micros: number;
+  budget_micros?: number;
   requests: number;
   tokens: number;
 }
@@ -26,6 +28,25 @@ export interface ProviderSpend {
   spend_micros: number;
   requests: number;
   tokens: number;
+  status?: 'operating' | 'degraded' | 'down';
+  latency_p50_ms?: number;
+  latency_p99_ms?: number;
+  failures_24h?: number;
+}
+
+export type EventType = 'usage' | 'budget.threshold' | 'provider.fallback' | 'config.changed' | string;
+
+export interface EventItem {
+  id: string;
+  type: EventType;
+  timestamp: string;
+  key_id?: string;
+  provider?: string;
+  model?: string;
+  cost_micros?: number;
+  status?: 'success' | 'warning' | 'error' | 'info';
+  message?: string;
+  details?: Record<string, unknown>;
 }
 
 export interface SubscriptionSpend {
@@ -68,6 +89,7 @@ export interface SummaryResponse {
   by_provider?: ProviderSpend[];
   subscriptions?: SubscriptionSpend[];
   reconciliation?: ReconciliationReport;
+  events?: EventItem[];
   monthly_budget_micros?: number;
   cache_savings_micros?: number;
   cache_rate_percent?: number;

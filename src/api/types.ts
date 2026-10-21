@@ -3,6 +3,7 @@ export interface DailySpend {
   spend_micros: number;
   requests: number;
   tokens: number;
+  by_provider?: ProviderSpend[];
 }
 
 export interface ModelSpend {
@@ -67,6 +68,9 @@ export interface SummaryResponse {
   by_provider?: ProviderSpend[];
   subscriptions?: SubscriptionSpend[];
   reconciliation?: ReconciliationReport;
+  monthly_budget_micros?: number;
+  cache_savings_micros?: number;
+  cache_rate_percent?: number;
 }
 
 export interface HealthResponse {

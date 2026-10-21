@@ -38,7 +38,7 @@ describe('App Root Component (F-01 / F-06)', () => {
     expect(screen.getByRole('banner')).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText('Custo Total (30d)')).toBeInTheDocument();
+      expect(screen.getByText('Gasto no período')).toBeInTheDocument();
     });
   });
 });

@@ -20,9 +20,9 @@ describe('Canonical Contract Verification (BUG-01 / summary.example.json)', () =
     render(<OverviewPage />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Custo Total/i)).toBeInTheDocument();
-      expect(screen.getByText(/Projeção Mensal/i)).toBeInTheDocument();
-      expect(screen.getByText(/Consumo Diário Recente/i)).toBeInTheDocument();
+      expect(screen.getByTestId('metric-card-spend')).toBeInTheDocument();
+      expect(screen.getByText('Orçamento do mês')).toBeInTheDocument();
+      expect(screen.getByText('Consumo Diário por Provedor')).toBeInTheDocument();
     });
   });
 

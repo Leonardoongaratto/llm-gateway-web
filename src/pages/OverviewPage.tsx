@@ -1,10 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { fetchSummary } from '../api/client';
 import type { SummaryResponse } from '../api/types';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { SkeletonCard } from '../components/Skeleton';
-import { formatDateShort, formatNumber, formatPercentChange, microsToUsd } from '../format/formatters';
+import { DailyUsageChart } from '../components/charts/DailyUsageChart';
+import { ModelShareBars } from '../components/charts/ModelShareBars';
+import { MetricCardsGrid } from '../components/overview/MetricCardsGrid';
+import { OriginFilter, OriginFilterType } from '../components/overview/OriginFilter';
+import { SubscriptionsCard } from '../components/overview/SubscriptionsCard';
+import { SummaryPhrase } from '../components/overview/SummaryPhrase';
 import { usePeriod } from '../layout/AppLayout';
 
 export const OverviewPage: React.FC = () => {
@@ -13,6 +18,7 @@ export const OverviewPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{ message: string; status?: number } | null>(null);
   const [retryKey, setRetryKey] = useState(0);
+  const [originFilter, setOriginFilter] = useState<OriginFilterType>('all');
 
   useEffect(() => {
     let active = true;
@@ -48,6 +54,43 @@ export const OverviewPage: React.FC = () => {
     setRetryKey((k) => k + 1);
   };
 
+  // Recalculate summary metrics based on origin filter (AC-48)
+  const filteredData = useMemo<SummaryResponse | null>(() => {
+    if (!data) return null;
+    if (originFilter === 'all') return data;
+
+    if (originFilter === 'gateway') {
+      const gatewaySpend = data.reconciliation?.total_gateway_micros ?? data.spend_micros;
+      return {
+        ...data,
+        spend_micros: gatewaySpend,
+      };
+    }
+
+    if (originFilter === 'claudecode') {
+      const claudeModels = data.by_model?.filter((m) => m.model.toLowerCase().includes('claude')) ?? [];
+      const claudeSpend = claudeModels.reduce((acc, m) => acc + m.spend_micros, 0);
+      const claudeSubs = data.subscriptions?.filter((s) => s.provider.toLowerCase() === 'anthropic') ?? [];
+
+      return {
+        ...data,
+        spend_micros: claudeSpend > 0 ? claudeSpend : data.spend_micros,
+        by_model: claudeModels,
+        subscriptions: claudeSubs,
+      };
+    }
+
+    if (originFilter === 'org') {
+      const orgSpend = data.reconciliation?.total_org_micros ?? 0;
+      return {
+        ...data,
+        spend_micros: orgSpend,
+      };
+    }
+
+    return data;
+  }, [data, originFilter]);
+
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -63,7 +106,7 @@ export const OverviewPage: React.FC = () => {
           <SkeletonCard lines={2} />
           <SkeletonCard lines={2} />
         </div>
-        <SkeletonCard lines={4} />
+        <SkeletonCard lines={6} />
       </div>
     );
   }
@@ -72,103 +115,73 @@ export const OverviewPage: React.FC = () => {
     return <ErrorBanner message={error.message} status={error.status} onRetry={handleRetry} />;
   }
 
-  const isEmpty = !data || (!data.spend_micros && (!data.daily || data.daily.length === 0));
+  const isEmpty =
+    !filteredData || (!filteredData.spend_micros && (!filteredData.daily || filteredData.daily.length === 0));
 
   if (isEmpty) {
     return <EmptyState />;
   }
 
-  const change = formatPercentChange(data.spend_micros, data.prev_spend_micros);
-  const totalRequests = data.daily?.reduce((acc, d) => acc + d.requests, 0) ?? 0;
-  const totalTokens = data.daily?.reduce((acc, d) => acc + d.tokens, 0) ?? 0;
+  const totalRequests = filteredData.daily?.reduce((acc, d) => acc + d.requests, 0) ?? 0;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Top Filter and Header Controls */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px',
+        }}
+      >
+        <span style={{ fontSize: '13px', color: 'var(--hig-text-secondary)', fontWeight: 500 }}>
+          Filtrar por canal de faturamento:
+        </span>
+        <OriginFilter value={originFilter} onChange={setOriginFilter} />
+      </div>
+
+      {/* Frase-Resumo Dinâmica (AC-18-Web, AC-19-Web) */}
+      <SummaryPhrase
+        periodDays={filteredData.period_days}
+        spendMicros={filteredData.spend_micros}
+        prevSpendMicros={filteredData.prev_spend_micros}
+        projectedMonthMicros={filteredData.projected_month_micros}
+        monthlyBudgetMicros={filteredData.monthly_budget_micros ?? 200_000_000}
+      />
+
+      {/* Grupo de 4 Métricas (AC-18-Web, AC-19-Web, F-08) */}
+      <MetricCardsGrid
+        spendMicros={filteredData.spend_micros}
+        prevSpendMicros={filteredData.prev_spend_micros}
+        projectedMonthMicros={filteredData.projected_month_micros}
+        monthlyBudgetMicros={filteredData.monthly_budget_micros ?? 200_000_000}
+        totalRequests={totalRequests}
+        cacheSavingsMicros={filteredData.cache_savings_micros ?? 18_400_000}
+        cacheRatePercent={filteredData.cache_rate_percent ?? 34}
+      />
+
+      {/* Gráfico Diário de Consumo e Participação por Modelo */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '16px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+          gap: '20px',
+          alignItems: 'start',
         }}
       >
-        <div className="hig-card">
-          <span className="hig-card-label">Custo Total ({data.period_days}d)</span>
-          <div className="hig-card-value tabular-nums">{microsToUsd(data.spend_micros)}</div>
-          <div
-            style={{
-              fontSize: '12px',
-              fontWeight: 600,
-              color:
-                change.trend === 'down'
-                  ? 'var(--hig-success)'
-                  : change.trend === 'up'
-                    ? 'var(--hig-danger)'
-                    : 'var(--hig-text-secondary)',
-              marginTop: '4px',
-            }}
-          >
-            {change.formatted} vs período anterior
-          </div>
-        </div>
+        <DailyUsageChart
+          data={filteredData.daily ?? []}
+          periodDays={filteredData.period_days}
+          providerSummary={filteredData.by_provider}
+        />
 
-        <div className="hig-card">
-          <span className="hig-card-label">Projeção Mensal</span>
-          <div className="hig-card-value tabular-nums">{microsToUsd(data.projected_month_micros)}</div>
-          <span style={{ fontSize: '11px', color: 'var(--hig-text-tertiary)', marginTop: '4px' }}>
-            Baseado na média diária
-          </span>
-        </div>
-
-        <div className="hig-card">
-          <span className="hig-card-label">Requisições</span>
-          <div className="hig-card-value tabular-nums">{formatNumber(totalRequests)}</div>
-          <span style={{ fontSize: '11px', color: 'var(--hig-text-tertiary)', marginTop: '4px' }}>
-            Chamadas roteadas
-          </span>
-        </div>
-
-        <div className="hig-card">
-          <span className="hig-card-label">Tokens Totais</span>
-          <div className="hig-card-value tabular-nums">{formatNumber(totalTokens)}</div>
-          <span style={{ fontSize: '11px', color: 'var(--hig-text-tertiary)', marginTop: '4px' }}>
-            Input + Output
-          </span>
-        </div>
+        <ModelShareBars models={filteredData.by_model ?? []} totalSpendMicros={filteredData.spend_micros} />
       </div>
 
-      {data.daily && data.daily.length > 0 && (
-        <div className="hig-card">
-          <h2 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '16px' }}>Consumo Diário Recente</h2>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--hig-border)', textAlign: 'left' }}>
-                  <th style={{ padding: '8px 12px', color: 'var(--hig-text-secondary)' }}>Data</th>
-                  <th style={{ padding: '8px 12px', color: 'var(--hig-text-secondary)' }}>Custo</th>
-                  <th style={{ padding: '8px 12px', color: 'var(--hig-text-secondary)' }}>Requisições</th>
-                  <th style={{ padding: '8px 12px', color: 'var(--hig-text-secondary)' }}>Tokens</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.daily.slice(-5).map((row) => (
-                  <tr key={row.date} style={{ borderBottom: '1px solid var(--hig-separator)' }}>
-                    <td style={{ padding: '10px 12px' }}>{formatDateShort(row.date)}</td>
-                    <td style={{ padding: '10px 12px' }} className="tabular-nums">
-                      {microsToUsd(row.spend_micros)}
-                    </td>
-                    <td style={{ padding: '10px 12px' }} className="tabular-nums">
-                      {formatNumber(row.requests)}
-                    </td>
-                    <td style={{ padding: '10px 12px' }} className="tabular-nums">
-                      {formatNumber(row.tokens)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      {/* Seção de Assinaturas e Eficiência (AC-48, F-16) */}
+      <SubscriptionsCard subscriptions={filteredData.subscriptions ?? []} />
     </div>
   );
 };

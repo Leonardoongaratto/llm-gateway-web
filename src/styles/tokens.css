@@ -43,6 +43,14 @@
   --hig-danger: #ff3b30;
   --hig-danger-subtle: rgba(255, 59, 48, 0.12);
 
+  /* Provider Colors - Light Mode */
+  --hig-provider-anthropic: #d97706;
+  --hig-provider-anthropic-subtle: rgba(217, 119, 6, 0.14);
+  --hig-provider-openai: #06b6d4;
+  --hig-provider-openai-subtle: rgba(6, 182, 212, 0.14);
+  --hig-provider-gemini: #6366f1;
+  --hig-provider-gemini-subtle: rgba(99, 102, 241, 0.14);
+
   /* Borders and Separators */
   --hig-border: rgba(0, 0, 0, 0.08);
   --hig-border-strong: rgba(0, 0, 0, 0.15);
@@ -82,6 +90,14 @@
     --hig-warning-subtle: rgba(255, 214, 10, 0.18);
     --hig-danger: #ff453a;
     --hig-danger-subtle: rgba(255, 69, 58, 0.18);
+
+    /* Provider Colors - Dark Mode */
+    --hig-provider-anthropic: #f59e0b;
+    --hig-provider-anthropic-subtle: rgba(245, 158, 11, 0.22);
+    --hig-provider-openai: #22d3ee;
+    --hig-provider-openai-subtle: rgba(34, 211, 238, 0.22);
+    --hig-provider-gemini: #818cf8;
+    --hig-provider-gemini-subtle: rgba(129, 140, 248, 0.22);
 
     --hig-border: rgba(255, 255, 255, 0.12);
     --hig-border-strong: rgba(255, 255, 255, 0.22);
@@ -471,4 +487,17 @@ body {
     animation: none !important;
     background: var(--hig-bg-grouped) !important;
   }
+}
+
+/* Accessibility Utilities */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
